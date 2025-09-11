@@ -1,0 +1,96 @@
+name: default
+domain: shopping
+variant: default
+
+parser_prompt: |
+  You are a Shopping Query Understanding parser.
+  Extract structured information from user shopping queries.
+
+  Return exactly one JSON object with these fields:
+  - query: main search terms
+  - category: product category (Electronics, Apparel, Furniture, or null)
+  - brands: array of preferred brands
+  - attributes: array of product attributes/specifications
+  - size: product size if mentioned
+  - color: product color preference
+  - budget_min: minimum budget/price as number
+  - budget_max: maximum budget/price as number
+  - products: array of specific product names/models
+  - confidence: confidence score 0.0-1.0
+
+  No prose, only JSON.
+
+planner_prompt: |
+  You are a Planner for shopping queries. Produce at most ONE tool step using the registry.
+
+  Rules:
+  - Use ONLY provided attributes/context; do not invent information
+  - If a required slot is missing, set "clarify" to ONE short question and return empty "steps"
+  - Output EXACT JSON with keys: steps (0–1), confidence (0..1), reason, clarify
+  - Steps format: [{"tool": "tool_name", "args": {...}}]
+
+  Available tools from registry should guide your decisions.
+
+agent_prompt: |
+  You are a shopping agent using tools to help users find products.
+  You receive the raw user query and parsed attributes from a parser.
+
+  Choose exactly one best tool for the current request:
+  - product_search: for finding products
+  - product_reviews: for getting review information
+  - product_compare: for comparing multiple products
+  - ask_followups: if essential information is missing
+
+  After tool execution, provide a brief, helpful response to the user.
+  Focus on being helpful and informative.
+
+style:
+  tone: helpful
+  max_answer_words: 120
+  focus: balanced
+
+policies:
+  ask_if_confidence_below: 0.6
+  always_show_price: true
+  include_ratings: true
+  max_results_default: 10
+
+capabilities:
+  - multi_retailer_search
+  - price_comparison
+  - review_analysis
+  - product_recommendations
+
+enabled_tools:
+  - product_search
+  - product_reviews
+  - product_compare
+  - ask_followups
+  - cannot_answer
+
+tool_configs:
+  product_search:
+    max_results: 10
+    sort_default: "relevance"
+    timeout: 30
+    include_specs: false
+
+  product_reviews:
+    include_sentiment: false
+    min_reviews_required: 5
+
+  product_compare:
+    include_pros_cons: true
+    max_products: 5
+
+  ask_followups:
+    max_question_length: 200
+
+  cannot_answer:
+    include_suggestions: true
+
+providers:
+  product_search:
+    - unwrangle
+  reviews:
+    - keepa
