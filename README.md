@@ -3,7 +3,7 @@
 # 🛍️ Curator - AI Personal Shopping Assistant
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: Copyright](https://img.shields.io/badge/license-Copyright-red.svg)](https://github.com/inflection-ai/curator)
+[![License: Copyright](https://img.shields.io/badge/license-Copyright-red.svg)](https://github.com/AI-ai/curator)
 [![Code Style: Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Type Checking: MyPy](https://img.shields.io/badge/type%20checking-mypy-blue.svg)](http://mypy-lang.org/)
 
@@ -11,7 +11,7 @@ A production-ready AI personal shopping assistant that leverages LLM-based query
 
 ## 🌟 Overview
 
-Inflection Curator represents the next generation of AI shopping assistants, combining sophisticated natural language understanding with persona-driven behavior and comprehensive task planning capabilities. Built with a clean, scalable architecture, it processes shopping queries through an intelligent pipeline: **Query Understanding → Planning → Tool Execution**.
+AI Curator represents the next generation of AI shopping assistants, combining sophisticated natural language understanding with persona-driven behavior and comprehensive task planning capabilities. Built with a clean, scalable architecture, it processes shopping queries through an intelligent pipeline: **Query Understanding → Planning → Tool Execution**.
 
 ## ✨ Key Features
 
@@ -42,7 +42,7 @@ Inflection Curator represents the next generation of AI shopping assistants, com
 ## 🏗️ System Architecture
 
 ### Overview
-Inflection Curator follows a layered architecture with clear separation of concerns, enabling scalable persona-based AI shopping experiences through sophisticated query understanding and planning.
+AI Curator follows a layered architecture with clear separation of concerns, enabling scalable persona-based AI shopping experiences through sophisticated query understanding and planning.
 
 ### High-Level Architecture
 
@@ -294,7 +294,7 @@ graph TD
 ### 📁 Project Structure
 
 ```bash
-📦 inflection-curator/                           # 🏠 Project Root
+📦 AI-curator/                           # 🏠 Project Root
 ├── 🎮 main.py                                   # CLI interface & demos
 ├── 🧪 test_integration.py                       # Integration tests
 ├── 📋 pyproject.toml                            # Modern packaging + deps
@@ -303,7 +303,7 @@ graph TD
 ├── 📖 README.md                                 # Project documentation
 └── 📚 QUERY_UNDERSTANDING_INTEGRATION.md        # Architecture details
 │
-└── 📦 inflection_curator/                       # 🎯 Main Package
+└── 📦 AI_curator/                       # 🎯 Main Package
     ├── 🚪 __init__.py                           # Public API exports
     ├── 📊 constants.py                          # System constants
     ├── ⚙️ settings.py                           # Configuration
@@ -372,7 +372,7 @@ python main.py --cli
 
 ```bash
 # Clone the repository
-git clone https://github.com/inflection-ai/curator.git
+git clone https://github.com/AI-ai/curator.git
 cd personal-shopper
 
 # Install dependencies
@@ -391,7 +391,7 @@ pip install -e .
 ### Basic Usage
 
 ```python
-from inflection_curator import ShoppingOrchestrator, ShoppingMode
+from AI_curator import ShoppingOrchestrator, ShoppingMode
 
 # Initialize the orchestrator
 orch = ShoppingOrchestrator()
@@ -424,7 +424,7 @@ else:
 python main.py --cli
 
 # Example interaction:
-🛍️ Inflection Curator - AI Personal Shopping Assistant
+🛍️ AI Curator - AI Personal Shopping Assistant
 ======================================================================
 
 Available Shopping Personas: default, budget_hunter, expert
@@ -530,7 +530,7 @@ ENVIRONMENT="production"                         # 🏗️ development | staging
 
 ```python
 # Custom persona configuration
-from inflection_curator import ShoppingOrchestrator
+from AI_curator import ShoppingOrchestrator
 
 orch = ShoppingOrchestrator()
 
@@ -587,7 +587,7 @@ result = orch.handle("Compare gaming laptops")  # Gets balanced recommendation
 ### Execution Modes
 
 ```python
-from inflection_curator import ShoppingOrchestrator, ShoppingMode
+from AI_curator import ShoppingOrchestrator, ShoppingMode
 
 orch = ShoppingOrchestrator()
 
@@ -614,7 +614,7 @@ orch.set_mode(ShoppingMode.AGENT_ONLY)      # Same as DIRECT_TOOL
 ### Provider Integration
 
 ```python
-from inflection_curator.providers import UnWrangleCatalogProvider
+from AI_curator.providers import UnWrangleCatalogProvider
 
 # Direct provider usage (bypasses orchestrator)
 provider = UnWrangleCatalogProvider()
@@ -644,7 +644,7 @@ result = orch.handle("gaming laptops under $1500")  # Uses UnWrangle internally
 ### Session Context
 
 ```python
-from inflection_curator import ShoppingOrchestrator
+from AI_curator import ShoppingOrchestrator
 
 orch = ShoppingOrchestrator()
 
@@ -673,7 +673,7 @@ orch.clear_session_context()
 ### Logging & Auditing
 
 ```python
-from inflection_curator.utils.logger import audit_event
+from AI_curator.utils.logger import audit_event
 
 # The system automatically logs events, but you can add custom events
 audit_event("custom_interaction", {
@@ -698,7 +698,7 @@ audit_event("custom_interaction", {
 python test_integration.py
 
 # Run with coverage (when test suite is expanded)
-pytest --cov=inflection_curator --cov-report=html
+pytest --cov=AI_curator --cov-report=html
 
 # Run specific test categories
 pytest -m "unit"                    # Unit tests only
@@ -710,14 +710,14 @@ pytest -m "not slow"               # Exclude slow tests
 
 ```bash
 # Format code
-black inflection_curator/
-ruff check inflection_curator/ --fix
+black AI_curator/
+ruff check AI_curator/ --fix
 
 # Type checking
-mypy inflection_curator/
+mypy AI_curator/
 
 # Security scanning
-bandit -r inflection_curator/
+bandit -r AI_curator/
 
 # Run all quality checks
 pre-commit run --all-files
@@ -727,7 +727,7 @@ pre-commit run --all-files
 
 ```bash
 # Clone and setup
-git clone https://github.com/inflection-ai/curator.git
+git clone https://github.com/AI-ai/curator.git
 cd personal-shopper
 
 # Install development dependencies
@@ -744,7 +744,7 @@ python main.py --cli
 
 ### Personal Shopping Assistant
 ```python
-from inflection_curator import ShoppingOrchestrator
+from AI_curator import ShoppingOrchestrator
 
 orch = ShoppingOrchestrator()
 
@@ -919,8 +919,8 @@ market_data = analyzer.analyze_market_segment("wireless earbuds", {
 4. **Testing**
    ```bash
    python test_integration.py       # Run tests
-   black inflection_curator/        # Format code
-   mypy inflection_curator/         # Type check
+   black AI_curator/        # Format code
+   mypy AI_curator/         # Type check
    ```
 
 5. **Submit**
@@ -968,15 +968,15 @@ market_data = analyzer.analyze_market_segment("wireless earbuds", {
 
 ## 📄 License
 
-Copyright (c) 2024 InflectionAI. All rights reserved.
+Copyright (c) 2024 AIAI. All rights reserved.
 
 ## 🆘 Support
 
-- **Documentation**: [docs.inflection.ai/curator](https://docs.inflection.ai/curator)
-- **Issues**: [GitHub Issues](https://github.com/inflection-ai/curator/issues)
-- **Email**: support@inflection.ai
-- **Discord**: [Inflection Community](https://discord.gg/inflection)
+- **Documentation**: [docs.AI.ai/curator](https://docs.AI.ai/curator)
+- **Issues**: [GitHub Issues](https://github.com/AI-ai/curator/issues)
+- **Email**: support@AI.ai
+- **Discord**: [AI Community](https://discord.gg/AI)
 
-**Built with ❤️ by the Inflection Team**
+**Built with ❤️ by the AI Team**
 
 *Transforming online shopping through intelligent AI assistance*
