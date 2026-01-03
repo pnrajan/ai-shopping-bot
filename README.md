@@ -1,6 +1,6 @@
 
 
-# 🛍️ Inflection Curator - AI Personal Shopping Assistant
+# 🛍️ Curator - AI Personal Shopping Assistant
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: Copyright](https://img.shields.io/badge/license-Copyright-red.svg)](https://github.com/inflection-ai/curator)
