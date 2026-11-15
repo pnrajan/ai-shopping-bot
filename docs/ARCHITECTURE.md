@@ -73,11 +73,12 @@ Specialized intents detected in the same call:
 
 Runs before any search when the session holds products from a previous turn. Hybrid detection:
 
-1. LLM extracts `price_max`, `price_min`, `features` from the query.
-2. Regex fallback catches the common patterns if the LLM is unavailable:
-   - price: `under|less than|below|cheaper than|no more than $N`
+1. Regex runs first and catches the common patterns with no LLM call:
+   - price: `under|less than|below|cheaper than|no more than $N`, `over|at least|above $N`
    - pointer words: `from those`, `which one`, `show me the ...`
    - filter words: `narrow down`, `filter by`, `only the`, `just the ones`
+2. LLM extracts `price_max`, `price_min`, `features` only when regex misses, the
+   understanding call marked the turn as a continuation, and budget remains.
 
 Filtered results return with a one-line explanation of the filter applied. A filter that matches nothing says so rather than running a new search.
 
@@ -112,15 +113,21 @@ Each tool takes a `ToolInput` (query understanding result, recent turns, tool pa
 
 Shared by the chat tool and any direct REST endpoint, so business logic lives in one place.
 
-1. Expand the query lightly (synonyms, spelling).
-2. Query the indexed catalog first (hybrid BM25 + vector, target under 50 ms).
-3. Score relevance of results against the query and attributes.
-4. If average relevance is low, fall back to a live catalog API (2 to 3 s).
-5. Rerank with a cross-encoder.
-6. Apply price, rating, category, and product-type filters from attributes.
-7. Enrich prices from an availability store where present.
+Implemented today:
 
-Results are cached with a semantic key (similarity threshold 0.98) for 24 hours, in Redis when available and in memory otherwise.
+1. Run each search query against the catalog provider in parallel (thread pool).
+2. Dedupe by product id, falling back to URL, then lowercased title.
+3. Score lexical relevance of each result against the canonical query.
+4. Apply price, rating, and brand filters from attributes. A filter that would
+   empty the list is skipped and the previous list kept.
+5. Sort by relevance, truncate to the requested limit.
+
+Results are cached under a normalized key (lowercased query, sorted attributes,
+limit) for 24 hours, in Redis when `[redis]` is installed and configured, in
+memory otherwise.
+
+Roadmap, each gated on a row in `docs/BENCHMARKS.md`: indexed hybrid search in
+front of the live provider, cross-encoder reranker, query expansion.
 
 ### Product schema
 
@@ -145,7 +152,7 @@ The structured item returned alongside the conversational reply.
 
 ### Session storage
 
-Per `conversation_id`, keep the last turns and the last product list shown. The product list powers refinement. Storage is a key-value abstraction with pluggable backends: on-disk for local development, a shared document store for multi-replica deployments.
+Per `conversation_id`, keep the last turns, the last product list shown, and a count of clarifications asked. The product list powers refinement; the counter enforces at most one clarification per conversation. `SessionStore` is a small protocol with two backends: in-memory (default) and SQLite (`SHOPPER_SESSION_STORE=sqlite`). Multi-replica deployments need a shared backend; see `docs/DEPLOYMENT.md`.
 
 ### Response shape (target)
 
@@ -172,16 +179,11 @@ This is the shape `/chat` returns today. `data_type` tells a client how to rende
 
 The reference platform routes between many personas (shopper, researcher, reminders, tasks, news, events, weather) with a persona router, multi-persona synthesis, a Streamlit UI, nginx, Docker, Redis, MongoDB, and a separate knowledge base service. Personal Shopper keeps only the shopper path. Anything that exists to arbitrate between personas or to serve non-shopping intents is out of scope.
 
-## Implementation order
+## Implementation status
 
-Matches the README roadmap.
+Items 1 through 9 of the original order are implemented (commit `38cbbbe`):
+query understanding, `product_search` against UnWrangle, planner table and
+executor, response generation, session storage and refinement, 24-hour cache,
+enrichments, review and research tools, auth, rate limiting, and tracing.
 
-1. Query understanding call and request/response models
-2. `product_search` tool against one catalog provider
-3. Planner pattern table and sequential executor
-4. Response generator producing `data` + `response`
-5. Session storage and refinement filter
-6. 24-hour semantic cache
-7. Comparison, essentials, and rationale enrichments
-8. Review summarizer and product research tools
-9. Auth, rate limiting, observability
+Remaining roadmap items live in the README and `docs/BENCHMARKS.md`.
