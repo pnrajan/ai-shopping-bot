@@ -28,6 +28,26 @@
     setTimeout(() => { b.textContent = "Copy"; b.classList.remove("is-done"); }, 1600);
   }));
 
+  /* ---------- GitHub star count (public API, cached 1h, silent on failure) ---------- */
+  (async () => {
+    const repo = window.SHOPBOT_REPO; if (!repo) return;
+    const KEY = "shopbot:stars:" + repo; const now = Date.now();
+    let stars = null;
+    try { const c = JSON.parse(sessionStorage.getItem(KEY) || "null"); if (c && now - c.t < 3600e3) stars = c.n; } catch {}
+    if (stars === null) {
+      try {
+        const r = await fetch("https://api.github.com/repos/" + repo, { headers: { Accept: "application/vnd.github+json" } });
+        if (!r.ok) return;
+        stars = (await r.json()).stargazers_count;
+        try { sessionStorage.setItem(KEY, JSON.stringify({ t: now, n: stars })); } catch {}
+      } catch { return; }
+    }
+    if (typeof stars !== "number") return;
+    const fmt = stars >= 1000 ? (stars / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(stars);
+    $$("[data-star-count]").forEach((el) => { el.textContent = fmt; el.hidden = false; });
+    $$("[data-star-count-inline]").forEach((el) => { el.textContent = " (" + stars.toLocaleString() + " so far)"; });
+  })();
+
   /* ---------- Active nav link ---------- */
   const navLinks = $$(".nav__links a[href*='#']");
   if (navLinks.length && document.body.classList.contains("is-home")) {

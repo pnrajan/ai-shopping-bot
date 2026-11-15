@@ -308,3 +308,13 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 @media (max-width: 700px) { .apitable thead { display: none; } .apitable td { display: block; padding: .4rem 1rem; } .apitable td:first-child { padding-top: .9rem; } .apitable td:last-child { padding-bottom: .9rem; border-bottom: 1px solid var(--line); } }
 .settings td:nth-child(1), .settings td:nth-child(2) { white-space: nowrap; }
 .settings td:nth-child(3) { color: var(--text-2); }
+
+/* Star */
+.btn--star { background: var(--surface-2); border-color: var(--line-2); }
+.btn--star svg { color: #e3c56a; }
+.star__count { font-family: var(--mono); font-size: .72rem; padding: .05rem .45rem; border-radius: 999px; border: 1px solid var(--line-2); color: var(--text-2); margin-left: .1rem; }
+.star-cta { margin: 1.4rem 0 0; color: var(--text-3); font-size: .9rem; }
+.star-cta a { color: var(--text); display: inline-flex; align-items: center; gap: .3rem; border-bottom: 1px solid var(--line-2); }
+.star-cta a:hover { border-color: var(--text); }
+.star-cta svg { color: #e3c56a; }
+@media (max-width: 820px) { .nav__links .btn--star { display: inline-flex; } }
