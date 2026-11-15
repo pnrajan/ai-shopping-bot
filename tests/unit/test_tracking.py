@@ -121,3 +121,76 @@ def test_monitor_thread_start_stop_is_noop_when_disabled():
     m = AvailabilityMonitor(InMemoryAvailabilityStore(), {}, interval_s=0)
     m.start()
     m.stop()
+
+
+# ---- current-state items, URL lookup, enrichment (ported from AvailabilityDB) ----
+
+
+def test_items_table_tracks_current_state_and_url(store):
+    store.record_observation(obs(100, url="https://Shop.example.com/p/1/?utm_source=x&ref=abc"))
+    store.record_observation(obs(90, in_stock=False))
+    it = store.item("fake", "p1")
+    assert it is not None
+    assert (it.price, it.in_stock, it.observations) == (90, False, 2)
+    assert it.url.startswith("https://Shop.example.com")  # last non-empty url kept
+    assert store.item_by_url("https://shop.example.com/p/1?ref=zzz") == it
+    assert store.item_by_url("https://shop.example.com/other") is None
+    assert store.count_items() == 1
+
+
+def test_items_filters(store):
+    store.record_observation(Observation(provider="fake", product_id="a", price=10, in_stock=True))
+    store.record_observation(Observation(provider="fake", product_id="b", price=50, in_stock=False))
+    store.record_observation(Observation(provider="fake", product_id="c", price=90, in_stock=True))
+    assert [i.product_id for i in store.items(in_stock=True)] == ["a", "c"]
+    assert [i.product_id for i in store.items(price_min=20, price_max=60)] == ["b"]
+    assert store.items(stale_after_s=3600) == []
+    assert len(store.items(stale_after_s=0)) == 3
+    assert len(store.items(limit=2)) == 2
+
+
+def test_enrich_overlays_newer_tracked_state():
+    from ai_shopping_bot.tracking.enrich import enrich
+
+    store = InMemoryAvailabilityStore()
+    cached_at = 1000.0
+    store.record_observation(
+        Observation(provider="fake", product_id="x", price=80, in_stock=False, observed_at=2000.0)
+    )
+    store.record_observation(
+        Observation(provider="fake", product_id="old", price=1, in_stock=True, observed_at=500.0)
+    )
+    products = [
+        Product(id="x", provider="fake", title="X", price=100, in_stock=True),
+        Product(id="old", provider="fake", title="Old", price=5, in_stock=True),
+        Product(id="never", provider="fake", title="N", price=7),
+        Product(title="anon", price=3),
+    ]
+    res = enrich(products, store, newer_than=cached_at)
+    assert (res.looked_up, res.hits, res.changed, res.dropped) == (3, 1, 1, 0)
+    assert res.products[0].price == 80 and res.products[0].in_stock is False
+    assert res.products[1].price == 5  # older than the cache entry, left alone
+    assert res.products[2].price == 7 and res.products[3].title == "anon"
+    res = enrich(products, store, newer_than=cached_at, drop_unavailable=True)
+    assert res.dropped == 1 and len(res.products) == 3
+
+
+def test_refresh_rechecks_stale_items_not_only_watches():
+    store = InMemoryAvailabilityStore()
+    provider = DriftingProvider()
+    seen = provider.search("gaming laptop", limit=3).products
+    store.record(seen, query="gaming laptop")
+    monitor = AvailabilityMonitor(store, {"fake": provider})
+    assert monitor.refresh().candidates == 0  # nothing stale yet
+    summary = monitor.refresh(stale_after_s=0, limit=2)
+    assert (summary.candidates, summary.checked, summary.updated, summary.missed) == (2, 2, 2, 0)
+    assert summary.changed == 2 and all(a.kind == AlertKind.PRICE_DROP for a in summary.alerts)
+    assert store.item("fake", seen[0].id).observations == 2
+
+
+def test_normalize_url():
+    from ai_shopping_bot.tracking.urls import normalize_url
+
+    a = normalize_url("HTTPS://Example.com/p/1/?b=2&utm_campaign=x&a=1#frag")
+    assert a == "https://example.com/p/1?a=1&b=2"
+    assert normalize_url("") == ""

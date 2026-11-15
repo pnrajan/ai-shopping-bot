@@ -42,6 +42,9 @@ Every setting has a `SHOPBOT_` prefix except provider keys, which keep their con
 | `SHOPBOT_TRACKING_SQLITE_PATH` | unset | Defaults to `SHOPBOT_SQLITE_PATH`. Separate tables from sessions |
 | `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` | `0` | Re-check watched products every N seconds in a background thread. `0` disables |
 | `SHOPBOT_TRACKING_HISTORY_LIMIT` | `100` | Default observations returned by the history endpoint |
+| `SHOPBOT_TRACKING_ENRICH_CACHED` | `true` | Overlay newer tracked price and stock onto cached search hits |
+| `SHOPBOT_TRACKING_STALE_AFTER_S` | `21600` | Items not seen for this long are refresh candidates |
+| `SHOPBOT_TRACKING_REFRESH_LIMIT` | `50` | Max items re-checked per refresh pass |
 | `SHOPBOT_API_KEY` | unset | When set, clients must send `X-API-Key` |
 | `SHOPBOT_RATE_LIMIT_PER_MINUTE` | `60` | Per API key, or per client IP when no key |
 | `SHOPBOT_OTEL_ENDPOINT` | unset | OTLP HTTP endpoint for per-stage spans. Needs `pip install ".[otel]"` |

@@ -1,31 +1,31 @@
 ---
 layout: default
 title: AI Shopping Bot
-description: A conversational shopping assistant API. One LLM call to understand a turn, refinement without re-searching, side-by-side comparisons.
+description: A conversational commerce API that returns a reply and structured product data in one call, with in-session refinement, comparisons, and price and availability tracking.
 ---
-<section class="hero">
+<section class="hero" id="overview">
   <div class="wrap hero__grid">
     <div>
-      <span class="eyebrow">Open source · MIT · Python 3.11+</span>
-      <h1 class="display">Ask like a shopper.<br><span class="shine">Get back products, not paragraphs.</span></h1>
-      <p class="lede">One API call turns "gaming laptop under $1200" into a reply and a typed product list. Say "cheaper" and it filters what you already saw. Say "X vs Y" and it builds the table. Two model calls, start to finish.</p>
+      <span class="eyebrow">Open source · MIT license · Python 3.11+</span>
+      <h1 class="display">Conversational commerce API with <span class="shine">structured product output.</span></h1>
+      <p class="lede">AI Shopping Bot converts a natural-language shopping request into a reply and typed product data in a single HTTP call. It refines earlier results without a new search, builds side-by-side comparisons, and tracks price and availability across catalog providers.</p>
       <div class="hero__cta">
-        <a class="btn btn--primary" href="#quickstart">Run it locally in 60 seconds</a>
-        <a class="btn" href="#pipeline">See what happens per turn</a>
+        <a class="btn btn--primary" href="#get-started">Get started</a>
+        <a class="btn" href="#how-it-works">How it works</a>
       </div>
       <div class="hero__meta">
         <span><b>2</b> model calls per turn</span>
-        <span><b>0</b> API keys to try it</span>
-        <span><b>1</b> response shape for every intent</span>
+        <span><b>8</b> stage pipeline, hard call budget</span>
+        <span><b>1</b> response schema for every intent</span>
       </div>
     </div>
 
     <div class="chat" id="chat" aria-label="Interactive demo. Simulated in the browser, mirrors the offline fake catalog.">
       <div class="chat__bar">
         <span class="chat__dot" aria-hidden="true"></span>
-        <span>Live demo</span>
+        <span>Interactive demonstration</span>
         <span class="spacer"></span>
-        <span class="chat__badge">fake catalog · 0 LLM keys</span>
+        <span class="chat__badge">offline catalog · no credentials</span>
         <button class="term__replay" id="chat-reset" type="button">Reset</button>
       </div>
       <div class="chat__thread" id="chat-thread" aria-live="polite"></div>
@@ -40,90 +40,89 @@ description: A conversational shopping assistant API. One LLM call to understand
   </div>
 </section>
 
-<section class="section" id="features">
+<section class="section" id="capabilities">
   <div class="wrap">
     <div class="section__head reveal">
-      <p class="kicker">Why it feels fast</p>
-      <h2>The model speaks twice. Everything else is deterministic.</h2>
-      <p>Each stage spends a model call only when a regex, a lookup table, or a cached result cannot answer first. Latency and cost stay flat as conversations get longer.</p>
+      <p class="kicker">Capabilities</p>
+      <h2>Designed for low latency and predictable cost.</h2>
+      <p>The language model is invoked twice per turn in the standard path. Every other step is deterministic: regular expressions, lookup tables, and cached results are tried before a model call is spent.</p>
     </div>
     <div class="features">
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
-        <h3>Understand once, typed</h3>
-        <p>Query, filters, intent, and extras like gift mode or an essentials checklist arrive in one structured response. Nothing downstream re-reads the raw text.</p>
+        <h3>Structured query understanding</h3>
+        <p>One model call returns the canonical query, filters, intent, and any specialized intent such as gift mode or an essentials checklist. Downstream stages consume typed fields, never raw text.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h16M7 12h10M10 19h4"/></svg></div>
-        <h3>Follow-ups stay in memory</h3>
-        <p>"Which of these are under $300?" filters what the user already saw. Regex handles it. The model only steps in when regex cannot decide.</p>
+        <h3>In-session refinement</h3>
+        <p>Follow-up constraints such as a price ceiling, brand, or rating are applied to the products already shown. Rule-based filtering handles the common cases; the model is used only when rules cannot decide.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg></div>
-        <h3>"X vs Y" becomes a table</h3>
-        <p>Two targeted searches, best match on each side, and a side-by-side comparison in the data payload. No prose to parse.</p>
+        <h3>Product comparison</h3>
+        <p>A request of the form "A vs B" runs two targeted searches, selects the best match on each side, and returns a comparison table in the structured payload.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></div>
-        <h3>Any model, per role</h3>
-        <p>OpenAI, SiliconFlow, and OpenRouter behind one client. A small fast model for understanding, a stronger one for the reply. Swap with an env var.</p>
+        <h3>Provider-agnostic model routing</h3>
+        <p>OpenAI, SiliconFlow, and OpenRouter are supported behind one client. Each pipeline role can be assigned a different model through environment variables.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <h3>A hard budget per request</h3>
-        <p>Four model calls, maximum. The normal path uses two. Overruns raise an error instead of quietly running up a bill.</p>
+        <h3>Bounded model usage</h3>
+        <p>A per-request budget caps model calls at four by default. Exceeding it raises an error rather than continuing silently. Call counts are reported in response metadata and asserted in tests.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
-        <h3>Production basics included</h3>
-        <p>SQLite or in-memory sessions. Redis or in-memory cache. API key auth, rate limiting, OpenTelemetry traces, and a Dockerfile.</p>
+        <h3>Operational readiness</h3>
+        <p>API key authentication, per-key rate limiting, SQLite or in-memory sessions, Redis or in-memory caching, OpenTelemetry traces, and a production Dockerfile.</p>
       </div>
       <div class="tile tile--wide reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 5-8 4 5"/><path d="M3 21h18"/></svg></div>
-        <h3>Prices and stock, tracked</h3>
-        <p>Every product seen becomes an observation. Watch an item and get alerts on price drops, a target price, or stock changes. History per product, re-checks on a schedule.</p>
+        <div>
+          <h3>Price and availability tracking</h3>
+          <p>Every product returned by a provider is recorded and folded into a current-state table keyed by provider, product id, and normalized URL. Cached search results are corrected with newer sightings before they are returned. Stale items are refreshed on a schedule, watched items can carry a target price, and changes produce alerts: price drop or rise, back in stock, out of stock, target reached.</p>
+        </div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="section" id="pipeline">
+<section class="section" id="get-started">
   <div class="wrap">
     <div class="section__head reveal">
-      <p class="kicker">How it works</p>
-      <h2>Eight stages. Any one can end the turn early.</h2>
-      <p>A request context flows through the stages in order. When a stage has the answer, the rest are skipped. Only persist always runs. Click a stage, or let it play.</p>
-    </div>
-    <div class="pipe">
-      <div class="rail" id="rail" role="tablist" aria-label="Pipeline stages"></div>
-      <div class="panel" id="panel" role="tabpanel"></div>
-    </div>
-  </div>
-</section>
-
-<section class="section" id="quickstart">
-  <div class="wrap">
-    <div class="section__head reveal">
-      <p class="kicker">Quick start</p>
-      <h2>Clone, run, chat. No keys yet.</h2>
-      <p>A deterministic fake LLM and fake catalog ship in the box. The whole pipeline runs on a laptop before you touch a single API key. Edit the request on the right and copy the curl.</p>
+      <p class="kicker">Getting started</p>
+      <h2>What you need, and the four commands to a first response.</h2>
+      <p>The default configuration runs entirely offline with a deterministic model stub and catalog. Provider credentials are required only when switching to live mode.</p>
     </div>
     <div class="play">
       <div class="reveal">
+        <h3 class="sub">Requirements</h3>
+        <ul class="req">
+          <li><span class="req__k">Required</span><div><b>Python 3.11, 3.12, or 3.13</b><span>CI runs the full suite on all three.</span></div></li>
+          <li><span class="req__k">Required</span><div><b>Git</b><span>To clone the repository. No other build tools.</span></div></li>
+          <li><span class="req__k">Optional</span><div><b>Docker</b><span>A production Dockerfile is included. Mount a volume for SQLite state.</span></div></li>
+          <li><span class="req__k">Live mode</span><div><b>One model provider key</b><span>OpenAI, SiliconFlow, or OpenRouter. Set <code>SHOPBOT_LLM=live</code> and a model per role.</span></div></li>
+          <li><span class="req__k">Live mode</span><div><b>Catalog API key</b><span>UnWrangle for a real product catalog. Set <code>SHOPBOT_CATALOG=unwrangle</code>.</span></div></li>
+          <li><span class="req__k">Scale-out</span><div><b>Redis</b><span>Shared cache for more than one replica. Optional extra.</span></div></li>
+        </ul>
+        <h3 class="sub">Setup</h3>
+        <ol class="steps">
+          <li><div><b>Clone and install</b><span>Creates a virtual environment, installs dependencies, and copies <code>.env.example</code> to <code>.env</code>.</span></div></li>
+          <li><div><b>Start the server</b><span>Serves on port 8000. Add <code>--dev</code> for auto-reload.</span></div></li>
+          <li><div><b>Send a request</b><span>Use the request builder on the right, or open the interactive OpenAPI documentation at <code>/docs</code>.</span></div></li>
+          <li><div><b>Go live when ready</b><span>Add provider keys to <code>.env</code> and switch the mode. Nothing else changes.</span></div></li>
+        </ol>
         <div class="codebox"><pre><code id="qs-code"><span class="tok-f">git</span> clone https://github.com/pnrajan/ai-shopping-bot.git
 <span class="tok-f">cd</span> ai-shopping-bot
-<span class="tok-f">bash</span> scripts/setup.sh   <span class="tok-c"># creates .venv, installs deps, copies .env.example to .env</span>
-<span class="tok-f">bash</span> scripts/run.sh     <span class="tok-c"># serves on http://127.0.0.1:8000</span></code></pre><button class="copy" type="button" data-copy="qs-code">Copy</button></div>
-        <p class="hint">Interactive OpenAPI docs are served at <code>http://localhost:8000/docs</code> once the server is running.</p>
-        <div class="stat-row">
-          <div class="stat"><b>3</b><span>scripts</span></div>
-          <div class="stat"><b>80%+</b><span>coverage gate</span></div>
-          <div class="stat"><b>3.11–3.13</b><span>CI matrix</span></div>
-        </div>
+<span class="tok-f">bash</span> scripts/setup.sh
+<span class="tok-f">bash</span> scripts/run.sh</code></pre><button class="copy" type="button" data-copy="qs-code">Copy</button></div>
       </div>
       <div class="reveal" id="playground">
+        <h3 class="sub">Request builder</h3>
         <div class="tabs" role="tablist" aria-label="Example requests">
-          <button class="tab" role="tab" aria-selected="true" data-ex="ask">Ask</button>
+          <button class="tab" role="tab" aria-selected="true" data-ex="ask">Search</button>
           <button class="tab" role="tab" aria-selected="false" data-ex="refine">Refine</button>
           <button class="tab" role="tab" aria-selected="false" data-ex="compare">Compare</button>
         </div>
@@ -137,23 +136,46 @@ description: A conversational shopping assistant API. One LLM call to understand
         </div>
         <div class="codebox"><pre><code id="pg-code"></code></pre><button class="copy" type="button" data-copy="pg-code">Copy</button></div>
         <p class="hint" id="pg-hint"></p>
+        <h3 class="sub">Response shape</h3>
+        <div class="codebox"><pre><code id="rs-code">{
+  <span class="tok-k">"response"</span>: <span class="tok-s">"Three gaming laptops under $1,200. ..."</span>,
+  <span class="tok-k">"data_type"</span>: <span class="tok-s">"products"</span>,
+  <span class="tok-k">"data"</span>: [{ <span class="tok-k">"title"</span>, <span class="tok-k">"price"</span>, <span class="tok-k">"rating"</span>, <span class="tok-k">"brand"</span>, <span class="tok-k">"url"</span>, <span class="tok-k">"provider"</span>, <span class="tok-k">"in_stock"</span> }],
+  <span class="tok-k">"data_count"</span>: <span class="tok-n">3</span>,
+  <span class="tok-k">"clarification_questions"</span>: <span class="tok-n">null</span>,
+  <span class="tok-k">"metadata"</span>: { <span class="tok-k">"llm_calls"</span>: <span class="tok-n">2</span>, <span class="tok-k">"processing_time_ms"</span>: <span class="tok-n">412</span>, <span class="tok-k">"from_cache"</span>: <span class="tok-n">false</span>, <span class="tok-k">"plan"</span>: [...], <span class="tok-k">"stages"</span>: [...] }
+}</code></pre><button class="copy" type="button" data-copy="rs-code">Copy</button></div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="section" id="models">
+<section class="section" id="how-it-works">
   <div class="wrap">
     <div class="section__head reveal">
-      <p class="kicker">Going live</p>
-      <h2>Go live by picking a model per role.</h2>
-      <p>Set <code>SHOPBOT_LLM=live</code> and choose a model for each of the four roles. Model ids are <code>provider/model</code>. Keys are read from the environment only, held as secrets, and never logged.</p>
+      <p class="kicker">How it works</p>
+      <h2>An eight-stage pipeline. Any stage can complete the request.</h2>
+      <p>A request context passes through the stages in order. When a stage has produced the answer, the remaining stages are skipped. Persistence always runs. Select a stage for details.</p>
+    </div>
+    <div class="pipe">
+      <div class="rail" id="rail" role="tablist" aria-label="Pipeline stages"></div>
+      <div class="panel" id="panel" role="tabpanel"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="configuration">
+  <div class="wrap">
+    <div class="section__head reveal">
+      <p class="kicker">Configuration</p>
+      <h2>Model selection per pipeline role.</h2>
+      <p>Set <code>SHOPBOT_LLM=live</code> and assign a model to each of the four roles. Model identifiers take the form <code>provider/model</code>. Keys are read from the environment, held as secrets, and never logged.</p>
     </div>
     <div class="mixer">
       <div class="roles reveal" id="roles"></div>
       <div class="reveal">
         <div class="codebox"><pre><code id="env-code"></code></pre><button class="copy" type="button" data-copy="env-code">Copy</button></div>
-        <p class="hint">For a real catalog set <code>SHOPBOT_CATALOG=unwrangle</code> and <code>UNWRANGLE_APIKEY</code>. Set <code>SHOPBOT_API_KEY</code> to require an <code>X-API-Key</code> header.</p>
+        <p class="hint">Full environment reference, including session store, cache, tracking, authentication, and tracing settings, in the <a href="{{ '/DEPLOYMENT.html' | relative_url }}">deployment guide</a>.</p>
       </div>
     </div>
   </div>
@@ -162,14 +184,27 @@ description: A conversational shopping assistant API. One LLM call to understand
 <section class="section" id="api">
   <div class="wrap">
     <div class="section__head reveal">
-      <p class="kicker">API surface</p>
-      <h2>Chat, search, track. One hard budget.</h2>
+      <p class="kicker">API reference</p>
+      <h2>Endpoints.</h2>
+      <p>All endpoints except <code>/health</code> honor <code>X-API-Key</code> when <code>SHOPBOT_API_KEY</code> is set. Interactive OpenAPI documentation is served at <code>/docs</code>.</p>
     </div>
-    <div class="band reveal">
-      <div><b>POST</b><span><code>/chat</code> · reply + structured products</span></div>
-      <div><b>GET</b><span><code>/products/search</code> · catalog, no LLM</span></div>
-      <div><b>GET</b><span><code>/products/{provider}/{id}/history</code> · price and stock over time</span></div>
-      <div><b>4</b><span>LLM calls per request, hard budget</span></div>
+    <div class="reveal apitable-wrap">
+      <table class="apitable">
+        <thead><tr><th>Method</th><th>Path</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><span class="m m-post">POST</span></td><td><code>/chat</code></td><td>Conversational turn. Returns reply text plus structured products, a comparison, or clarification questions.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/products/search</code></td><td>Direct catalog search with no model call.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/products/{provider}/{id}/history</code></td><td>Price statistics, observation history, and alerts for one product.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/tracking/status</code></td><td>Tracked item counts by availability, stale count, price range, watches, alerts.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/tracking/items</code></td><td>Current state of tracked items. Filter by stock, price range, staleness.</td></tr>
+          <tr><td><span class="m m-post">POST</span></td><td><code>/tracking/items/bulk</code></td><td>Current state for many product ids or URLs in one request.</td></tr>
+          <tr><td><span class="m m-post">POST</span></td><td><code>/tracking/refresh</code></td><td>Re-check stale tracked items against their providers now.</td></tr>
+          <tr><td><span class="m m-post">POST</span> <span class="m">GET</span> <span class="m m-del">DELETE</span></td><td><code>/watches</code></td><td>Create, list, or remove a watch. A watch may carry a target price.</td></tr>
+          <tr><td><span class="m m-post">POST</span></td><td><code>/watches/check</code></td><td>Re-check every watched product now. Returns new alerts.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/alerts</code></td><td>Recent price and availability alerts.</td></tr>
+          <tr><td><span class="m">GET</span></td><td><code>/health</code></td><td>Status and version.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
@@ -177,13 +212,14 @@ description: A conversational shopping assistant API. One LLM call to understand
 <section class="section">
   <div class="wrap">
     <div class="cta reveal">
-      <p class="kicker">Read deeper</p>
-      <h2>Read the design. Then ship it.</h2>
-      <p>Pipeline internals and layering rules, the full environment reference, and a benchmark row for every change that adds latency or a model call.</p>
+      <p class="kicker">Documentation</p>
+      <h2>Architecture, deployment, and benchmarks.</h2>
+      <p>Pipeline internals and layering rules, the complete environment reference, and a benchmark row for every change that adds latency or a model call.</p>
       <div class="hero__cta" style="justify-content:center">
         <a class="btn btn--primary" href="{{ '/ARCHITECTURE.html' | relative_url }}">Architecture</a>
         <a class="btn" href="{{ '/DEPLOYMENT.html' | relative_url }}">Deployment</a>
         <a class="btn" href="{{ '/BENCHMARKS.html' | relative_url }}">Benchmarks</a>
+        <a class="btn" href="https://github.com/pnrajan/ai-shopping-bot/blob/main/CONTRIBUTING.md" rel="noopener">Contributing</a>
       </div>
     </div>
   </div>

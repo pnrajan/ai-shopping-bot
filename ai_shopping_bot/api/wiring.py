@@ -93,6 +93,8 @@ def build_services(
             {provider.name: provider},
             interval_s=settings.tracking_monitor_interval_s,
             timeout_s=settings.search_timeout_s,
+            stale_after_s=settings.tracking_stale_after_s,
+            refresh_limit=settings.tracking_refresh_limit,
         )
         if tracker
         else None
@@ -104,6 +106,7 @@ def build_services(
         timeout_s=settings.search_timeout_s,
         default_limit=settings.search_limit,
         tracker=tracker,
+        enrich_cached=settings.tracking_enrich_cached,
     )
     stages = [
         UnderstandStage(llm),

@@ -7,7 +7,17 @@ from collections.abc import Callable
 from fastapi import APIRouter, Depends, HTTPException, status
 
 from ai_shopping_bot.api.wiring import Services
-from ai_shopping_bot.contracts.tracking import Alert, ProductHistory, Watch, WatchCreate
+from ai_shopping_bot.contracts.tracking import (
+    Alert,
+    BulkLookup,
+    BulkLookupResponse,
+    ProductHistory,
+    RefreshSummary,
+    TrackedItem,
+    TrackingStatus,
+    Watch,
+    WatchCreate,
+)
 from ai_shopping_bot.settings import Settings
 from ai_shopping_bot.tracking import AvailabilityStore
 
@@ -35,6 +45,7 @@ def build_tracking_router(settings: Settings, guard: Callable, svc: Callable) ->
         return ProductHistory(stats=t.stats(provider, product_id), history=history, alerts=alerts)
 
     _watch_routes(router, tracker, svc)
+    _item_routes(router, tracker, svc, settings)
 
     @router.get("/alerts", response_model=list[Alert])
     def list_alerts(limit: int = 50, t: AvailabilityStore = Depends(tracker)) -> list[Alert]:
@@ -62,3 +73,76 @@ def _watch_routes(router: APIRouter, tracker: Callable, svc: Callable) -> None:
     def delete_watch(watch_id: int, t: AvailabilityStore = Depends(tracker)) -> None:
         if not t.remove_watch(watch_id):
             raise HTTPException(status.HTTP_404_NOT_FOUND, "no such watch")
+
+
+def _item_routes(router: APIRouter, tracker: Callable, svc: Callable, settings: Settings) -> None:
+    @router.get("/tracking/status", response_model=TrackingStatus)
+    def tracking_status(s: Services = Depends(svc), t: AvailabilityStore = Depends(tracker)):
+        items = t.items(limit=100_000)
+        prices = [i.price for i in items if i.price is not None]
+        stale_after = settings.tracking_stale_after_s
+        return TrackingStatus(
+            enabled=True,
+            store=settings.tracking,
+            items=len(items),
+            available=sum(1 for i in items if i.in_stock is True),
+            unavailable=sum(1 for i in items if i.in_stock is False),
+            unknown=sum(1 for i in items if i.in_stock is None),
+            stale=sum(1 for i in items if i.is_stale(stale_after)),
+            stale_after_s=stale_after,
+            watches=len(t.watches()),
+            alerts=len(t.alerts(500)),
+            min_price=min(prices) if prices else None,
+            max_price=max(prices) if prices else None,
+            avg_price=round(sum(prices) / len(prices), 2) if prices else None,
+            last_updated=max((i.updated_at for i in items), default=None),
+            monitor_interval_s=settings.tracking_monitor_interval_s,
+            enrich_cached=settings.tracking_enrich_cached,
+        )
+
+    @router.get("/tracking/items", response_model=list[TrackedItem])
+    def tracking_items(
+        in_stock: bool | None = None,
+        price_min: float | None = None,
+        price_max: float | None = None,
+        stale_after_s: float | None = None,
+        limit: int = 100,
+        t: AvailabilityStore = Depends(tracker),
+    ) -> list[TrackedItem]:
+        return t.items(
+            in_stock=in_stock,
+            price_min=price_min,
+            price_max=price_max,
+            stale_after_s=stale_after_s,
+            limit=max(1, min(limit, 1000)),
+        )
+
+    @router.get("/tracking/items/{provider}/{product_id}", response_model=TrackedItem)
+    def tracking_item(provider: str, product_id: str, t: AvailabilityStore = Depends(tracker)):
+        item = t.item(provider, product_id)
+        if item is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "not tracked")
+        return item
+
+    @router.post("/tracking/items/bulk", response_model=BulkLookupResponse)
+    def tracking_bulk(body: BulkLookup, t: AvailabilityStore = Depends(tracker)):
+        out = BulkLookupResponse()
+        for ref in body.items:
+            item = t.item(ref.provider, ref.product_id)
+            (
+                out.found.append(item)
+                if item
+                else out.missing.append(f"{ref.provider}/{ref.product_id}")
+            )
+        for url in body.urls:
+            item = t.item_by_url(url)
+            (out.found.append(item) if item else out.missing.append(url))
+        return out
+
+    @router.post("/tracking/refresh", response_model=RefreshSummary)
+    def tracking_refresh(
+        stale_after_s: float | None = None, limit: int | None = None, s: Services = Depends(svc)
+    ) -> RefreshSummary:
+        if s.monitor is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "tracking is disabled")
+        return s.monitor.refresh(stale_after_s=stale_after_s, limit=limit)

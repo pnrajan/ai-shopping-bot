@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from ai_shopping_bot.cache.semantic import SemanticCache
@@ -10,6 +11,7 @@ from ai_shopping_bot.contracts.understanding import QueryUnderstanding
 from ai_shopping_bot.logging import get_logger, log_event
 from ai_shopping_bot.providers.base import CatalogProvider
 from ai_shopping_bot.search import filters, relevance
+from ai_shopping_bot.tracking.enrich import enrich
 from ai_shopping_bot.tracking.store import AvailabilityStore
 
 log = get_logger("search")
@@ -24,10 +26,12 @@ class SearchHandler:
         timeout_s: float = 8.0,
         default_limit: int = 10,
         tracker: AvailabilityStore | None = None,
+        enrich_cached: bool = True,
     ):
         self._provider = provider
         self._cache = cache
         self._tracker = tracker
+        self._enrich_cached = enrich_cached
         self._timeout = timeout_s
         self._limit = default_limit
 
@@ -39,8 +43,14 @@ class SearchHandler:
         key = SemanticCache.key(queries, qu.category)
         cached = self._cache.get(key) if self._cache else None
         if cached is not None:
-            products = [Product.model_validate(p) for p in cached]
-            return self._finish(qu, products, limit, from_cache=True, provider_calls=0)
+            cached_at, raw = _unpack(cached)
+            products = [Product.model_validate(p) for p in raw]
+            extra: dict = {}
+            if self._tracker and self._enrich_cached:
+                res = enrich(products, self._tracker, newer_than=cached_at)
+                products = res.products
+                extra = {"enriched": res.changed}
+            return self._finish(qu, products, limit, from_cache=True, provider_calls=0, extra=extra)
         results = self._fetch(queries, qu.category, limit)
         merged = _dedupe([p for r in results for p in r.products])
         if self._tracker and merged:
@@ -48,7 +58,7 @@ class SearchHandler:
             if alerts:
                 log_event(log, "tracking.alerts", count=len(alerts))
         if self._cache and merged:
-            self._cache.put(key, [p.model_dump() for p in merged])
+            self._cache.put(key, {"at": time.time(), "products": [p.model_dump() for p in merged]})
         return self._finish(qu, merged, limit, from_cache=False, provider_calls=len(results))
 
     def _fetch(self, queries: list[str], category: str | None, limit: int) -> list[ProviderResults]:
@@ -71,6 +81,7 @@ class SearchHandler:
         *,
         from_cache: bool,
         provider_calls: int,
+        extra: dict | None = None,
     ) -> tuple[list[Product], dict]:
         ranked = relevance.rank(qu.canonical_query, products)
         filtered = filters.apply_understanding(ranked, qu)[:limit]
@@ -79,9 +90,17 @@ class SearchHandler:
             "provider_calls": provider_calls,
             "candidates": len(products),
             "returned": len(filtered),
+            **(extra or {}),
         }
         log_event(log, "search.done", **meta)
         return filtered, meta
+
+
+def _unpack(cached: object) -> tuple[float, list]:
+    """Cache entries are ``{"at", "products"}``; a bare list is a pre-tracking entry."""
+    if isinstance(cached, dict):
+        return float(cached.get("at", 0.0)), list(cached.get("products", []))
+    return 0.0, list(cached)  # type: ignore[arg-type]
 
 
 def _dedupe(products: list[Product]) -> list[Product]:

@@ -197,4 +197,10 @@ Remaining roadmap items live in the README and `docs/BENCHMARKS.md`.
 - **Alert.** derived on write: price moves of 1% or more, stock flips, and target reached (fires once per crossing).
 - **AvailabilityMonitor.** re-runs the search that surfaced each watched product and keeps the result whose id matches. Providers expose search, not get-by-id, which is why the query is stored. Runs on demand via `POST /watches/check` or on a daemon thread when `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` is set.
 
-Stores: in-memory (bounded per product and per alert list) and SQLite (three tables, indexed by product). Both share the diff logic in `tracking/store.py`.
+- **TrackedItem.** the current-state row per `(provider, product_id)`: latest price, stock, URL (indexed by normalized URL), originating query, observation count, first and last seen. Every observation folds into it. This is the availability DB proper; observations are its history.
+- **Enrichment.** `SearchHandler` stores the fetch time with each cache entry. On a cache hit it overlays any tracked item updated after that time onto the cached product (price, stock, URL), so a re-check or a later search corrects stale cached prices without a provider call. Fresh results are never touched.
+- **Refresh.** `AvailabilityMonitor.refresh` walks tracked items older than the staleness threshold, oldest first, bounded per pass, and records a new observation for each one found. Watches are checked separately and always.
+
+Stores: in-memory (bounded per product and per alert list) and SQLite (observations, items, watches, alerts, indexed by product and URL). Both share the fold and diff logic in `tracking/store.py`.
+
+This design is ported from the AvailabilityDB in the pi-user-personas service: a current-state table keyed by product id and URL, an enrichment pass over search results, bulk lookup, a scheduled price update job, and a status endpoint. Differences here: history is kept per product rather than only the latest row, alerts are derived on write, and the refresh job runs in-process instead of on a queue.

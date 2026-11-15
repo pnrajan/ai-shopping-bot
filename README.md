@@ -118,19 +118,27 @@ Response:
 
 Direct catalog search with no LLM. Useful for checking a provider.
 
-### Tracking
+### Tracking: the availability DB
 
-Every product returned by a search is recorded as an observation (provider, id, price, stock, time). Enabled by default in memory; set `SHOPBOT_TRACKING=sqlite` to persist.
+Every product returned by a provider is recorded as an observation (provider, id, price, stock, URL, originating query, time) and folded into a current-state table of tracked items. Enabled by default in memory; set `SHOPBOT_TRACKING=sqlite` to persist.
+
+Three things use that table:
+
+- **Enrichment.** Cached search results can be up to the cache TTL old. When a newer sighting exists for a cached product, its price, stock, and URL are overlaid before the result is returned. Metadata reports `enriched`. Turn off with `SHOPBOT_TRACKING_ENRICH_CACHED=false`.
+- **Refresh.** `POST /tracking/refresh` re-checks tracked items not seen for `SHOPBOT_TRACKING_STALE_AFTER_S`, oldest first, up to `SHOPBOT_TRACKING_REFRESH_LIMIT` per pass. Watched items are always re-checked by `POST /watches/check`. Both run on a background loop when `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` is set.
+- **Alerts.** Consecutive observations are diffed: `price_drop`, `price_rise`, `back_in_stock`, `out_of_stock`, and `target_reached` for a watch with a target price.
 
 | Endpoint | Purpose |
 |---|---|
+| `GET /tracking/status` | Item counts by availability, stale count, price range, watches, alerts, last update |
+| `GET /tracking/items` | Current state, filterable by `in_stock`, `price_min`, `price_max`, `stale_after_s` |
+| `GET /tracking/items/{provider}/{id}` | Current state of one product |
+| `POST /tracking/items/bulk` | Current state for many ids or URLs in one call. URLs are normalized |
+| `POST /tracking/refresh` | Re-check stale items now. Returns checked, updated, changed, alerts |
 | `GET /products/{provider}/{id}/history` | Stats (current, min, max, avg price, availability ratio) plus observations and alerts |
-| `POST /watches` | Watch a product. Body: `provider`, `product_id`, optional `target_price`, `query` |
-| `GET /watches` · `DELETE /watches/{id}` | List or remove watches |
-| `POST /watches/check` | Re-check every watch against its provider now. Returns new alerts |
-| `GET /alerts` | Recent alerts: `price_drop`, `price_rise`, `back_in_stock`, `out_of_stock`, `target_reached` |
-
-Set `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` to re-check watches on a background loop.
+| `POST /watches` · `GET /watches` · `DELETE /watches/{id}` | Watch a product with an optional `target_price` |
+| `POST /watches/check` | Re-check every watch now. Returns new alerts |
+| `GET /alerts` | Recent alerts |
 
 ### `GET /health`
 

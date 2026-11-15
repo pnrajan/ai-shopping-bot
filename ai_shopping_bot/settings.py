@@ -89,6 +89,13 @@ class Settings(BaseSettings):
         0, ge=0, description="Re-check watched products every N seconds. 0 disables the loop"
     )
     tracking_history_limit: int = 100
+    tracking_enrich_cached: bool = Field(
+        True, description="Overlay the latest tracked price and stock onto cached search hits"
+    )
+    tracking_stale_after_s: float = Field(
+        6 * 3600, ge=0, description="Items not seen for this long are candidates for refresh"
+    )
+    tracking_refresh_limit: int = Field(50, ge=1, description="Max items per refresh pass")
 
     enrich_comparison: bool = True
     enrich_essentials: bool = True

@@ -161,7 +161,7 @@
     }
     function reset() {
       state.products = []; state.busy = false; thread.innerHTML = "";
-      add("msg--bot", `<p class="msg__who">assistant</p><div class="bubble">Simulated in your browser against the same deterministic fake catalog the offline server uses. Ask for a product, then refine it, or compare two.</div>`);
+      add("msg--bot", `<p class="msg__who">assistant</p><div class="bubble">This demonstration runs in the browser against the same deterministic catalog the server uses offline. Search for a product, refine the results, or compare two items.</div>`);
       setChips(SUGGEST.start);
     }
     form.addEventListener("submit", (e) => { e.preventDefault(); send(input.value); });
@@ -230,9 +230,9 @@
 
   /* ---------- Playground: curl builder ---------- */
   const EX = {
-    ask: { msg: "gaming laptop under $1200", history: [], hint: "First turn. understand → plan → execute → respond. Two LLM calls. data_type: products." },
-    refine: { msg: "which of these are under $1000?", history: [{ role: "user", content: "gaming laptop under $1200" }, { role: "assistant", content: "Three gaming laptops under $1,200..." }], hint: "Same conversation_id. The refine stage filters the previous products in memory and finishes early. No new search." },
-    compare: { msg: "MacBook Air vs ThinkPad X1 Carbon", history: [], hint: "The compare stage runs two targeted searches and enrich returns a side-by-side table in data." },
+    ask: { msg: "gaming laptop under $1200", history: [], hint: "First turn: understand, plan, execute, respond. Two model calls. Returns data_type products." },
+    refine: { msg: "which of these are under $1000?", history: [{ role: "user", content: "gaming laptop under $1200" }, { role: "assistant", content: "Three gaming laptops under $1,200..." }], hint: "Same conversation_id. The refine stage filters the previous products in memory and completes the request without a new search." },
+    compare: { msg: "MacBook Air vs ThinkPad X1 Carbon", history: [], hint: "The compare stage runs two targeted searches; the enrich stage returns a side-by-side table in the data payload." },
   };
   const pgMsg = $("#pg-msg"), pgConv = $("#pg-conv"), pgCode = $("#pg-code"), pgHint = $("#pg-hint");
   if (pgMsg) {

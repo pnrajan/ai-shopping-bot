@@ -18,9 +18,11 @@ from ai_shopping_bot.contracts.tracking import (
     AlertKind,
     Observation,
     PriceStats,
+    TrackedItem,
     Watch,
     WatchCreate,
 )
+from ai_shopping_bot.tracking.urls import normalize_url
 
 Key = tuple[str, str]
 
@@ -38,6 +40,18 @@ class AvailabilityStore(Protocol):
     def remove_watch(self, watch_id: int) -> bool: ...
     def watches(self) -> list[Watch]: ...
     def alerts(self, limit: int = 50) -> list[Alert]: ...
+    def item(self, provider: str, product_id: str) -> TrackedItem | None: ...
+    def item_by_url(self, url: str) -> TrackedItem | None: ...
+    def items(
+        self,
+        *,
+        in_stock: bool | None = None,
+        price_min: float | None = None,
+        price_max: float | None = None,
+        stale_after_s: float | None = None,
+        limit: int = 100,
+    ) -> list[TrackedItem]: ...
+    def count_items(self) -> int: ...
 
 
 def observation_from(product: Product, query: str = "") -> Observation | None:
@@ -108,6 +122,40 @@ def compute_stats(provider: str, product_id: str, obs: list[Observation]) -> Pri
     )
 
 
+def fold(prev: TrackedItem | None, obs: Observation) -> TrackedItem:
+    """Current-state row after ``obs``. Keeps the last non-empty title, url, and query."""
+    return TrackedItem(
+        provider=obs.provider,
+        product_id=obs.product_id,
+        title=obs.title or (prev.title if prev else ""),
+        url=obs.url or (prev.url if prev else ""),
+        price=obs.price,
+        currency=obs.currency,
+        in_stock=obs.in_stock,
+        query=obs.query or (prev.query if prev else ""),
+        observations=(prev.observations if prev else 0) + 1,
+        first_seen=prev.first_seen if prev else obs.observed_at,
+        updated_at=obs.observed_at,
+    )
+
+
+def _matches(
+    it: TrackedItem,
+    in_stock: bool | None,
+    price_min: float | None,
+    price_max: float | None,
+    stale_after_s: float | None,
+    now: float,
+) -> bool:
+    if in_stock is not None and it.in_stock is not in_stock:
+        return False
+    if price_min is not None and (it.price is None or it.price < price_min):
+        return False
+    if price_max is not None and (it.price is None or it.price > price_max):
+        return False
+    return not (stale_after_s is not None and not it.is_stale(stale_after_s, now))
+
+
 class _Base:
     """Shared record/diff logic; subclasses supply storage primitives."""
 
@@ -140,6 +188,8 @@ class _Base:
 class InMemoryAvailabilityStore(_Base):
     def __init__(self, max_history: int = 1000, max_alerts: int = 500):
         self._obs: dict[Key, list[Observation]] = defaultdict(list)
+        self._items: dict[Key, TrackedItem] = {}
+        self._by_url: dict[str, Key] = {}
         self._watches: dict[int, Watch] = {}
         self._alerts: list[Alert] = []
         self._next = 1
@@ -160,12 +210,45 @@ class InMemoryAvailabilityStore(_Base):
         return None
 
     def _append(self, obs: Observation, alerts: list[Alert]) -> None:
+        key = (obs.provider, obs.product_id)
         with self._lock:
-            lst = self._obs[(obs.provider, obs.product_id)]
+            lst = self._obs[key]
             lst.append(obs)
             del lst[: -self._max_history]
+            item = fold(self._items.get(key), obs)
+            self._items[key] = item
+            if item.url:
+                self._by_url[normalize_url(item.url)] = key
             self._alerts.extend(alerts)
             del self._alerts[: -self._max_alerts]
+
+    def item(self, provider: str, product_id: str) -> TrackedItem | None:
+        with self._lock:
+            return self._items.get((provider, product_id))
+
+    def item_by_url(self, url: str) -> TrackedItem | None:
+        with self._lock:
+            key = self._by_url.get(normalize_url(url))
+            return self._items.get(key) if key else None
+
+    def items(
+        self,
+        *,
+        in_stock: bool | None = None,
+        price_min: float | None = None,
+        price_max: float | None = None,
+        stale_after_s: float | None = None,
+        limit: int = 100,
+    ) -> list[TrackedItem]:
+        now = time.time()
+        with self._lock:
+            rows = sorted(self._items.values(), key=lambda i: i.updated_at)
+        out = [i for i in rows if _matches(i, in_stock, price_min, price_max, stale_after_s, now)]
+        return out[:limit]
+
+    def count_items(self) -> int:
+        with self._lock:
+            return len(self._items)
 
     def history(self, provider: str, product_id: str, limit: int = 100) -> list[Observation]:
         with self._lock:
@@ -222,6 +305,16 @@ class SQLiteAvailabilityStore(_Base):
                     title TEXT NOT NULL DEFAULT '', query TEXT NOT NULL DEFAULT '',
                     target_price REAL, created_at REAL NOT NULL,
                     UNIQUE (provider, product_id));
+                CREATE TABLE IF NOT EXISTS items (
+                    provider TEXT NOT NULL, product_id TEXT NOT NULL,
+                    title TEXT NOT NULL DEFAULT '', url TEXT NOT NULL DEFAULT '',
+                    url_norm TEXT NOT NULL DEFAULT '',
+                    price REAL, currency TEXT NOT NULL DEFAULT 'USD', in_stock INTEGER,
+                    query TEXT NOT NULL DEFAULT '', observations INTEGER NOT NULL DEFAULT 0,
+                    first_seen REAL NOT NULL, updated_at REAL NOT NULL,
+                    PRIMARY KEY (provider, product_id));
+                CREATE INDEX IF NOT EXISTS items_url ON items (url_norm);
+                CREATE INDEX IF NOT EXISTS items_updated ON items (updated_at);
                 CREATE TABLE IF NOT EXISTS alerts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     created_at REAL NOT NULL, payload TEXT NOT NULL);
@@ -247,6 +340,80 @@ class SQLiteAvailabilityStore(_Base):
 
     _OBS_COLS = "provider, product_id, title, url, price, currency, in_stock, query, observed_at"
     _WATCH_COLS = "id, provider, product_id, title, query, target_price, created_at"
+    _ITEM_COLS = (
+        "provider, product_id, title, url, price, currency, in_stock, query, observations, "
+        "first_seen, updated_at"
+    )
+
+    @staticmethod
+    def _row_item(r: tuple) -> TrackedItem:
+        return TrackedItem(
+            provider=r[0],
+            product_id=r[1],
+            title=r[2],
+            url=r[3],
+            price=r[4],
+            currency=r[5],
+            in_stock=None if r[6] is None else bool(r[6]),
+            query=r[7],
+            observations=r[8],
+            first_seen=r[9],
+            updated_at=r[10],
+        )
+
+    def _item_in(self, c: sqlite3.Connection, provider: str, product_id: str) -> TrackedItem | None:
+        r = c.execute(
+            f"SELECT {self._ITEM_COLS} FROM items WHERE provider = ? AND product_id = ?",
+            (provider, product_id),
+        ).fetchone()
+        return self._row_item(r) if r else None
+
+    def item(self, provider: str, product_id: str) -> TrackedItem | None:
+        with self._lock, self._conn() as c:
+            return self._item_in(c, provider, product_id)
+
+    def item_by_url(self, url: str) -> TrackedItem | None:
+        with self._lock, self._conn() as c:
+            r = c.execute(
+                f"SELECT {self._ITEM_COLS} FROM items WHERE url_norm = ? ORDER BY updated_at DESC "
+                "LIMIT 1",
+                (normalize_url(url),),
+            ).fetchone()
+        return self._row_item(r) if r else None
+
+    def items(
+        self,
+        *,
+        in_stock: bool | None = None,
+        price_min: float | None = None,
+        price_max: float | None = None,
+        stale_after_s: float | None = None,
+        limit: int = 100,
+    ) -> list[TrackedItem]:
+        clauses, args = [], []
+        if in_stock is not None:
+            clauses.append("in_stock = ?")
+            args.append(int(in_stock))
+        if price_min is not None:
+            clauses.append("price >= ?")
+            args.append(price_min)
+        if price_max is not None:
+            clauses.append("price <= ?")
+            args.append(price_max)
+        if stale_after_s is not None:
+            clauses.append("updated_at < ?")
+            args.append(time.time() - stale_after_s)
+        where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+        with self._lock, self._conn() as c:
+            rows = c.execute(
+                f"SELECT {self._ITEM_COLS} FROM items {where} ORDER BY updated_at LIMIT ?",
+                (*args, limit),
+            ).fetchall()
+        return [self._row_item(r) for r in rows]
+
+    def count_items(self) -> int:
+        with self._lock, self._conn() as c:
+            return c.execute("SELECT COUNT(*) FROM items").fetchone()[0]
 
     def latest(self, provider: str, product_id: str) -> Observation | None:
         with self._lock, self._conn() as c:
@@ -291,6 +458,30 @@ class SQLiteAvailabilityStore(_Base):
                     None if obs.in_stock is None else int(obs.in_stock),
                     obs.query,
                     obs.observed_at,
+                ),
+            )
+            item = fold(self._item_in(c, obs.provider, obs.product_id), obs)
+            c.execute(
+                f"INSERT INTO items ({self._ITEM_COLS}, url_norm) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+                "ON CONFLICT(provider, product_id) DO UPDATE SET title = excluded.title, "
+                "url = excluded.url, url_norm = excluded.url_norm, price = excluded.price, "
+                "currency = excluded.currency, in_stock = excluded.in_stock, "
+                "query = excluded.query, observations = excluded.observations, "
+                "updated_at = excluded.updated_at",
+                (
+                    item.provider,
+                    item.product_id,
+                    item.title,
+                    item.url,
+                    item.price,
+                    item.currency,
+                    None if item.in_stock is None else int(item.in_stock),
+                    item.query,
+                    item.observations,
+                    item.first_seen,
+                    item.updated_at,
+                    normalize_url(item.url) if item.url else "",
                 ),
             )
             c.executemany(

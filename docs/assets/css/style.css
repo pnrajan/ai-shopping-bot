@@ -61,7 +61,7 @@ code, pre, kbd { font-family: var(--mono); font-size: 0.875em; }
 .eyebrow { display: inline-flex; align-items: center; gap: .5rem; font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: var(--text-2); border: 1px solid var(--line); padding: .35rem .75rem; border-radius: 999px; background: rgba(255,255,255,.02); }
 .eyebrow::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); }
 h1.display { font-size: clamp(2.4rem, 5.2vw, 4rem); line-height: 1.04; letter-spacing: -0.035em; margin: 1.1rem 0 1rem; font-weight: 700; }
-.shine { background: linear-gradient(100deg, #ffffff 0%, #c9ccd3 40%, #ffffff 55%, #9a9da5 100%); background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 7s linear infinite; }
+.shine { background: linear-gradient(100deg, #ffffff 0%, #c9ccd3 60%, #9a9da5 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
 @keyframes shine { to { background-position: -200% 0; } }
 .lede { color: var(--text-2); font-size: 1.12rem; max-width: 36rem; margin: 0 0 1.75rem; }
 .hero__cta { display: flex; gap: .75rem; flex-wrap: wrap; align-items: center; }
@@ -280,3 +280,29 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 
 /* Inline code outside prose */
 .is-home code:not(pre code) { background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: .1em .35em; color: var(--text); font-size: .82em; }
+
+/* Getting started */
+.sub { font-size: .8rem; letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin: 0 0 .8rem; font-weight: 600; }
+.sub ~ .sub { margin-top: 1.6rem; }
+.req { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; }
+.req li { display: grid; grid-template-columns: 5.5rem 1fr; gap: .9rem; align-items: start; padding: .7rem .9rem; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); }
+.req__k { font-size: .68rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); padding-top: .2rem; }
+.req b { display: block; font-size: .92rem; font-weight: 600; }
+.req span:not(.req__k) { display: block; font-size: .84rem; color: var(--text-2); margin-top: .1rem; }
+.steps { margin: 0 0 1rem; padding: 0; list-style: none; counter-reset: step; display: grid; gap: .5rem; }
+.steps li { counter-increment: step; display: grid; grid-template-columns: 2rem 1fr; gap: .8rem; align-items: start; }
+.steps li::before { content: counter(step, decimal-leading-zero); font-family: var(--mono); font-size: .75rem; color: var(--platinum); border: 1px solid var(--line-2); border-radius: 6px; width: 2rem; height: 1.6rem; display: grid; place-items: center; }
+.steps b { display: block; font-size: .92rem; font-weight: 600; }
+.steps span { display: block; font-size: .84rem; color: var(--text-2); }
+/* API table */
+.apitable-wrap { border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; background: var(--surface); }
+.apitable { width: 100%; border-collapse: collapse; font-size: .9rem; }
+.apitable th, .apitable td { text-align: left; padding: .8rem 1rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+.apitable th { font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); font-weight: 600; background: var(--bg-2); }
+.apitable tr:last-child td { border-bottom: 0; }
+.apitable td:nth-child(3) { color: var(--text-2); }
+.apitable td:nth-child(1) { white-space: nowrap; }
+.m { display: inline-block; font: 600 .66rem var(--mono); letter-spacing: .06em; padding: .18rem .45rem; border-radius: 5px; border: 1px solid var(--line-2); color: var(--text-2); }
+.m-post { color: #0a0b0d; background: var(--platinum); border-color: var(--platinum); }
+.m-del { color: #d9a3a3; border-color: rgba(217,163,163,.4); }
+@media (max-width: 700px) { .apitable thead { display: none; } .apitable td { display: block; padding: .4rem 1rem; } .apitable td:first-child { padding-top: .9rem; } .apitable td:last-child { padding-bottom: .9rem; border-bottom: 1px solid var(--line); } }
