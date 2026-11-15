@@ -2,194 +2,98 @@
 
 [![CI](https://github.com/pankajrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pankajrajan/personal-shopper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+
+A FastAPI service that exposes a chat endpoint for a personal shopping assistant. Clients send the user's latest message, the conversation history, and a session ID. The service validates the payload and returns a structured response.
 
 > **Status: early skeleton.** The `/chat` endpoint currently validates and echoes requests. AI responses, product search, and storage are not implemented yet. See [Roadmap](#roadmap).
 
-A FastAPI-based web service that provides an HTTP API for a personal shopping assistant. The service handles chat conversations where users can interact with an AI assistant to get shopping recommendations and product information.
-
 ## Features
 
-- RESTful API for shopping assistant interactions
-- Conversation history tracking
-- Session management with unique conversation IDs
-- Fully documented API endpoints
-- Request/response validation with Pydantic
+- `POST /chat` endpoint with Pydantic request validation
+- Stateless design: all context travels in the request, so instances scale horizontally
+- Auto-generated OpenAPI docs at `/docs` and `/redoc`
+- Test suite, linting, and CI configured out of the box
 
-## Prerequisites
+## Requirements
 
-- Python 3.9+
-- pip (Python package installer)
+- Python 3.10 or newer
+- pip
 
-## Local Setup
-
-### 1. Clone the Repository
+## Quick Start
 
 ```bash
 git clone https://github.com/pankajrajan/personal-shopper.git
 cd personal-shopper
-```
 
-### 2. Create Virtual Environment (Recommended)
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
-```bash
-# Create virtual environment
-python -m venv venv
-
-# Activate virtual environment
-# On macOS/Linux:
-source venv/bin/activate
-
-# On Windows:
-venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-
-```bash
 pip install -r requirements.txt
-```
-
-### 4. Run the Application
-
-```bash
 python main.py
 ```
 
-The server will start and be available at `http://localhost:8000`
+The server listens on `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
 
-### 5. Access API Documentation
+For hot reload during development:
 
-Once the server is running, you can access:
-
-- **Interactive API docs (Swagger UI)**: http://localhost:8000/docs
-- **Alternative API docs (ReDoc)**: http://localhost:8000/redoc
-- **OpenAPI schema**: http://localhost:8000/openapi.json
-
-## API Usage
-
-### Chat Endpoint
-
-**POST** `/chat`
-
-Send a message to the personal shopping assistant.
-
-#### Request Body
-
-```json
-{
-  "recent_turn": "I'm looking for a new laptop for gaming",
-  "history": [
-    {
-      "role": "user",
-      "message": "Hello",
-      "timestamp": "2023-01-01T10:00:00Z"
-    },
-    {
-      "role": "assistant",
-      "message": "Hi! How can I help you shop today?",
-      "timestamp": "2023-01-01T10:00:01Z"
-    }
-  ],
-  "conversation_id": "session-123"
-}
+```bash
+uvicorn main:app --reload
 ```
 
-#### Response
+## API
+
+### `POST /chat`
+
+Request body:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `recent_turn` | string | Yes | The user's latest message |
+| `history` | array of objects | Yes | Prior turns. Each object is free-form, typically `{"role": ..., "message": ...}` |
+| `conversation_id` | string | Yes | Stable identifier for the session |
+
+Response body:
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `message` | string | Acknowledgement text |
+| `conversation_id` | string | Echo of the request's session ID |
+| `recent_turn` | string | Echo of the user's message |
+| `history_length` | integer | Number of prior turns received |
+
+Validation failures return `422 Unprocessable Entity` with FastAPI's standard error body.
+
+### Example
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recent_turn": "I need a laptop for video editing under $1500",
+    "history": [
+      {"role": "user", "message": "Hello"},
+      {"role": "assistant", "message": "Hi! How can I help you shop today?"}
+    ],
+    "conversation_id": "session-123"
+  }'
+```
 
 ```json
 {
   "message": "Chat request received",
   "conversation_id": "session-123",
-  "recent_turn": "I'm looking for a new laptop for gaming",
+  "recent_turn": "I need a laptop for video editing under $1500",
   "history_length": 2
 }
 ```
 
-## Example Usage
+More examples live in [`examples/`](./examples/):
 
-For runnable examples, see the [`examples/`](./examples/) folder:
-
-- [`examples/curl_examples.sh`](./examples/curl_examples.sh) - curl requests
-- [`examples/python_client.py`](./examples/python_client.py) - Python client with multi-turn history
-
-### Quick Start Examples
-
-#### Using curl
-
-```bash
-# Start a new conversation
-curl -X POST "http://localhost:8000/chat" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "recent_turn": "I need help finding a good smartphone under $500",
-    "history": [],
-    "conversation_id": "session-001"
-  }'
-```
-
-#### Using Python requests
-
-```python
-import requests
-
-# API endpoint
-url = "http://localhost:8000/chat"
-
-# Request payload
-payload = {
-    "recent_turn": "What are the best wireless headphones for working out?",
-    "history": [
-        {"role": "user", "message": "Hello"},
-        {"role": "assistant", "message": "Hi! How can I help you shop today?"}
-    ],
-    "conversation_id": "session-456"
-}
-
-# Send request
-response = requests.post(url, json=payload)
-print(response.json())
-```
-
-#### Using JavaScript/fetch
-
-```javascript
-const response = await fetch('http://localhost:8000/chat', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  body: JSON.stringify({
-    recent_turn: "I'm looking for a winter jacket under $200",
-    history: [],
-    conversation_id: "session-789"
-  })
-});
-
-const data = await response.json();
-console.log(data);
-```
-
-> **💡 Tip:** Run the examples in the `examples/` folder to see more detailed implementations and use cases.
+- [`curl_examples.sh`](./examples/curl_examples.sh) - shell script with curl requests
+- [`python_client.py`](./examples/python_client.py) - Python client with multi-turn history
 
 ## Development
-
-### Project Structure
-
-```
-personal-shopper/
-├── .github/workflows/ci.yml   # Lint + tests on push/PR
-├── examples/                  # Runnable client examples
-│   ├── curl_examples.sh
-│   └── python_client.py
-├── tests/                     # pytest suite
-├── main.py                    # FastAPI application
-├── pyproject.toml             # Project metadata, ruff/pytest config
-├── requirements.txt           # Runtime dependencies
-├── requirements-dev.txt       # Dev dependencies
-└── README.md
-```
-
-### Running Tests
 
 ```bash
 pip install -r requirements-dev.txt
@@ -197,78 +101,55 @@ ruff check .
 pytest
 ```
 
-### Adding New Dependencies
+CI runs the same two commands on Python 3.10, 3.12, and 3.13 for every push and pull request.
 
-1. Add the package to `requirements.txt`
-2. Install with: `pip install -r requirements.txt`
+### Project layout
 
-### Code Style
+```
+personal-shopper/
+├── .github/workflows/ci.yml   # Lint + tests
+├── examples/                  # Runnable client examples
+├── tests/                     # pytest suite
+├── main.py                    # FastAPI application
+├── pyproject.toml             # Metadata, ruff and pytest config
+├── requirements.txt           # Runtime dependencies
+└── requirements-dev.txt       # Dev dependencies
+```
 
-The codebase follows Python best practices with:
-- Type hints for function parameters and return values
-- Comprehensive docstrings for all classes and functions
-- Pydantic models for request/response validation
+### Dependencies
 
-## API Reference
-
-### ChatRequest Model
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `recent_turn` | string | Yes | The most recent user message |
-| `history` | array | Yes | List of previous conversation turns |
-| `conversation_id` | string | Yes | Unique session identifier |
-
-### Chat Response
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `message` | string | Confirmation message |
-| `conversation_id` | string | Echo of the session ID |
-| `recent_turn` | string | Echo of the user's message |
-| `history_length` | integer | Number of previous turns |
+| Package | Minimum | Purpose |
+|---------|---------|---------|
+| fastapi | 0.163 | Web framework |
+| uvicorn | 0.54 | ASGI server |
+| pydantic | 2.14 | Request validation |
+| pytest | 9.2 | Tests (dev) |
+| httpx2 | 2.16 | Test client transport (dev) |
+| ruff | 0.17 | Lint and import sorting (dev) |
 
 ## Troubleshooting
 
-### Common Issues
+**Port 8000 in use.** Pick another port:
 
-1. **Port already in use**: If port 8000 is occupied, you can specify a different port:
-   ```bash
-   uvicorn main:app --host 0.0.0.0 --port 8001
-   ```
+```bash
+uvicorn main:app --port 8001
+```
 
-2. **Module not found**: Make sure you've activated your virtual environment and installed dependencies:
-   ```bash
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   pip install -r requirements.txt
-   ```
+**`ModuleNotFoundError`.** Activate the virtual environment and reinstall dependencies.
 
-3. **Permission errors**: On some systems, you might need to use `python3` instead of `python`:
-   ```bash
-   python3 main.py
-   ```
+**`python` not found.** Use `python3` on systems where `python` is not aliased.
 
 ## Roadmap
 
-Planned next steps. Track progress and discuss in GitHub Issues.
+Planned next steps, roughly in order. Discussion and progress tracking happen in GitHub Issues.
 
-- [ ] Add LLMPlanner component
-- [ ] Add Executor to execute on the Plan and hook it with the Orchestrator (to be implemented)
-- [ ] Connect SessionStorage
-- [ ] Implement Cache to save results for 24 hours in Search Index as recommended by providers
-- [ ] Implement Task DB to store tasks for cron execution for curation
-
-## Future Enhancements
-
-This is a foundational implementation. Future versions will include:
-
-- AI-powered response generation
-- Product catalog integration
-- Recommendation engine
-- User preference tracking
-- E-commerce platform APIs
-- Authentication and authorization
-- Rate limiting and security features
+- [ ] LLM planner that turns a user turn into a shopping plan
+- [ ] Executor that runs the plan and reports back through an orchestrator
+- [ ] Session storage so history does not have to be resent each call
+- [ ] 24-hour result cache in the search index, as providers recommend
+- [ ] Task database for scheduled curation jobs
+- [ ] Product catalog and e-commerce integrations
+- [ ] Authentication, rate limiting, and security headers
 
 ## Contributing
 

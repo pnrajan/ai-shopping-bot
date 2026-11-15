@@ -1,11 +1,11 @@
 """Minimal Python client for the Personal Shopper API.
 
 Usage:
-    pip install httpx
+    pip install httpx2
     python examples/python_client.py
 """
 
-import httpx
+import httpx2 as httpx
 
 BASE_URL = "http://localhost:8000"
 

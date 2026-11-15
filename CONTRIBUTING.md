@@ -27,7 +27,7 @@ pip install -r requirements-dev.txt
 
 ## Style
 
-- Python 3.9+ compatible.
+- Python 3.10+ compatible.
 - Type hints on public functions.
 - Docstrings on public classes and functions. Keep them proportional to the code.
 - Formatting and linting via `ruff`.
