@@ -18,7 +18,7 @@ class NoopSink:
 
 
 class OTelSink:
-    def __init__(self, endpoint: str, service_name: str = "personal-shopper"):
+    def __init__(self, endpoint: str, service_name: str = "personal-shopper-agent"):
         from opentelemetry import trace
         from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
         from opentelemetry.sdk.resources import Resource

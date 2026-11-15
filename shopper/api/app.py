@@ -36,7 +36,7 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         yield
 
     app = FastAPI(
-        title="Personal Shopper API",
+        title="Personal Shopper Agent API",
         version=__version__,
         description="Chat endpoint for a personal shopping assistant.",
         lifespan=lifespan,

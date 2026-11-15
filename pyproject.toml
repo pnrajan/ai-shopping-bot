@@ -1,5 +1,5 @@
 [project]
-name = "personal-shopper"
+name = "personal-shopper-agent"
 version = "0.3.0"
 description = "FastAPI personal shopping assistant: query understanding, product search, refinement, and comparison over a staged pipeline"
 readme = "README.md"

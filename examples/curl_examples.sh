@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Example requests against a locally running Personal Shopper API.
+# Example requests against a locally running Personal Shopper Agent API.
 # Start the server first: python main.py
 set -euo pipefail
 
