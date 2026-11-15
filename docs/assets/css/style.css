@@ -306,3 +306,5 @@ select.input { appearance: none; background-image: linear-gradient(45deg, transp
 .m-post { color: #0a0b0d; background: var(--platinum); border-color: var(--platinum); }
 .m-del { color: #d9a3a3; border-color: rgba(217,163,163,.4); }
 @media (max-width: 700px) { .apitable thead { display: none; } .apitable td { display: block; padding: .4rem 1rem; } .apitable td:first-child { padding-top: .9rem; } .apitable td:last-child { padding-bottom: .9rem; border-bottom: 1px solid var(--line); } }
+.settings td:nth-child(1), .settings td:nth-child(2) { white-space: nowrap; }
+.settings td:nth-child(3) { color: var(--text-2); }

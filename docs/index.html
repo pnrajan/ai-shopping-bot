@@ -110,7 +110,7 @@ description: A conversational commerce API that returns a reply and structured p
         <h3 class="sub">Setup</h3>
         <ol class="steps">
           <li><div><b>Clone and install</b><span>Creates a virtual environment, installs dependencies, and copies <code>.env.example</code> to <code>.env</code>.</span></div></li>
-          <li><div><b>Start the server</b><span>Serves on port 8000. Add <code>--dev</code> for auto-reload.</span></div></li>
+          <li><div><b>Start the server</b><span>Serves on port 8000 and prints mode, tracking store, and log format. Add <code>--dev</code> for auto-reload.</span></div></li>
           <li><div><b>Send a request</b><span>Use the request builder on the right, or open the interactive OpenAPI documentation at <code>/docs</code>.</span></div></li>
           <li><div><b>Go live when ready</b><span>Add provider keys to <code>.env</code> and switch the mode. Nothing else changes.</span></div></li>
         </ol>
@@ -175,8 +175,25 @@ description: A conversational commerce API that returns a reply and structured p
       <div class="roles reveal" id="roles"></div>
       <div class="reveal">
         <div class="codebox"><pre><code id="env-code"></code></pre><button class="copy" type="button" data-copy="env-code">Copy</button></div>
-        <p class="hint">Full environment reference, including session store, cache, tracking, authentication, and tracing settings, in the <a href="{{ '/DEPLOYMENT.html' | relative_url }}">deployment guide</a>.</p>
+        <p class="hint">Full environment reference in the <a href="{{ '/DEPLOYMENT.html' | relative_url }}">deployment guide</a>.</p>
       </div>
+    </div>
+    <h3 class="sub" style="margin-top:2rem">Key settings</h3>
+    <div class="reveal apitable-wrap">
+      <table class="apitable settings">
+        <thead><tr><th>Variable</th><th>Default</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td><code>SHOPBOT_LLM</code></td><td><code>fake</code></td><td><code>fake</code> runs offline with a deterministic stub. <code>live</code> uses the models above.</td></tr>
+          <tr><td><code>SHOPBOT_CATALOG</code></td><td><code>fake</code></td><td><code>fake</code> or <code>unwrangle</code>. Live catalog needs <code>UNWRANGLE_APIKEY</code>.</td></tr>
+          <tr><td><code>SHOPBOT_SESSION_STORE</code></td><td><code>memory</code></td><td><code>memory</code> or <code>sqlite</code>. SQLite is required for more than one worker.</td></tr>
+          <tr><td><code>SHOPBOT_TRACKING</code></td><td><code>memory</code></td><td><code>off</code>, <code>memory</code>, or <code>sqlite</code>. Price and availability history for every product seen.</td></tr>
+          <tr><td><code>SHOPBOT_TRACKING_MONITOR_INTERVAL_S</code></td><td><code>0</code></td><td>Re-check watches and refresh stale items on a background loop. <code>0</code> means on demand only.</td></tr>
+          <tr><td><code>SHOPBOT_LLM_MAX_CALLS_PER_REQUEST</code></td><td><code>4</code></td><td>Hard budget per turn. Exceeding it returns 503 rather than continuing.</td></tr>
+          <tr><td><code>SHOPBOT_API_KEY</code></td><td>unset</td><td>When set, every endpoint except <code>/health</code> requires <code>X-API-Key</code>.</td></tr>
+          <tr><td><code>SHOPBOT_LOG_FORMAT</code></td><td><code>text</code></td><td><code>text</code> for <code>event key=value</code> lines, <code>json</code> for one object per line. Level via <code>SHOPBOT_LOG_LEVEL</code>.</td></tr>
+          <tr><td><code>SHOPBOT_OTEL_ENDPOINT</code></td><td>unset</td><td>OTLP HTTP endpoint. One span per pipeline stage per turn.</td></tr>
+        </tbody>
+      </table>
     </div>
   </div>
 </section>
