@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from shopper.api.tracing import TraceSink, build_sink
 from shopper.cache.semantic import InMemoryBackend, SemanticCache
 from shopper.llm.client import LLMClient, OpenAICompatibleClient
 from shopper.llm.fake import FakeLLM
@@ -36,6 +37,7 @@ class Services:
     store: SessionStore
     cache: SemanticCache
     pipeline: ShoppingPipeline
+    tracer: TraceSink
 
 
 def build_llm(settings: Settings) -> LLMClient:
@@ -89,4 +91,6 @@ def build_services(
         store=store,
         max_llm_calls=settings.llm_max_calls_per_request,
     )
-    return Services(settings, llm, provider, search, store, cache, pipeline)
+    return Services(
+        settings, llm, provider, search, store, cache, pipeline, build_sink(settings.otel_endpoint)
+    )

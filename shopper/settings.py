@@ -76,6 +76,8 @@ class Settings(BaseSettings):
     )
     rate_limit_per_minute: int = 60
 
+    otel_endpoint: str | None = Field(None, description="OTLP HTTP endpoint for stage spans")
+
     enrich_comparison: bool = True
     enrich_essentials: bool = True
     enrich_rationale: bool = True

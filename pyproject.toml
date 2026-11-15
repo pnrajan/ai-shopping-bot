@@ -25,6 +25,10 @@ dev = [
     "vulture>=2.11",
 ]
 redis = ["redis>=5.0"]
+otel = [
+    "opentelemetry-sdk>=1.27",
+    "opentelemetry-exporter-otlp-proto-http>=1.27",
+]
 
 [tool.ruff]
 line-length = 100

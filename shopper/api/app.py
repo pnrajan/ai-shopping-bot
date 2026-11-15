@@ -52,11 +52,13 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
     @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(guard)], tags=["chat"])
     def chat(body: ChatRequest, s: Services = Depends(svc)) -> ChatResponse:
         try:
-            return s.pipeline.run(body)
+            response = s.pipeline.run(body)
         except LLMBudgetExceeded as e:
             raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(e)) from e
         except LLMError as e:
             raise HTTPException(status.HTTP_502_BAD_GATEWAY, str(e)) from e
+        s.tracer.record(response)
+        return response
 
     @app.get(
         "/products/search",

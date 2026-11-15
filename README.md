@@ -143,6 +143,14 @@ shopper/
 
 Layers import downward only, checked by `import-linter`.
 
+## Deploy
+
+```bash
+docker build -t personal-shopper . && docker run --rm -p 8000:8000 --env-file .env personal-shopper
+```
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for environment reference, multi-replica notes, and the OpenTelemetry export (`pip install ".[otel]"`, set `SHOPPER_OTEL_ENDPOINT`). Measurements live in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).
+
 ## Roadmap
 
 Behind optional extras, each landing only with a before/after measurement:
@@ -151,8 +159,6 @@ Behind optional extras, each landing only with a before/after measurement:
 - [ ] Cross-encoder reranker
 - [ ] Query expansion
 - [ ] Second catalog provider
-- [ ] OpenTelemetry export of per-stage timings
-- [ ] Dockerfile and deployment guide
 
 ## Contributing
 
