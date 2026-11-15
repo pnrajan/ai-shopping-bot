@@ -36,7 +36,7 @@ target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "BLE", "G", "C90", "PLR0915", "SIM", "RET"]
-per-file-ignores = { "tests/*" = ["PLR0915", "E501"], "ai_shopping_bot/api/app.py" = ["BLE001", "B008"] }
+per-file-ignores = { "tests/*" = ["PLR0915", "E501"], "ai_shopping_bot/api/app.py" = ["BLE001", "B008"], "ai_shopping_bot/api/tracking_routes.py" = ["B008"] }
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
@@ -68,7 +68,7 @@ layers = [
     "ai_shopping_bot.stages",
     "ai_shopping_bot.tools",
     "ai_shopping_bot.search",
-    "ai_shopping_bot.session | ai_shopping_bot.cache",
+    "ai_shopping_bot.session | ai_shopping_bot.cache | ai_shopping_bot.tracking",
     "ai_shopping_bot.providers | ai_shopping_bot.llm",
     "ai_shopping_bot.contracts",
 ]

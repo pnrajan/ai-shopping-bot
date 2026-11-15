@@ -187,3 +187,14 @@ executor, response generation, session storage and refinement, 24-hour cache,
 enrichments, review and research tools, auth, rate limiting, and tracing.
 
 Remaining roadmap items live in the README and `docs/BENCHMARKS.md`.
+
+## Price and availability tracking
+
+`tracking/` sits in the same layer as `session/` and `cache/`. `SearchHandler` hands every freshly fetched product list to `AvailabilityStore.record`, which appends one observation per `(provider, product_id)` and diffs it against the previous one. Cache hits are not recorded, so the history reflects provider truth, not replayed data.
+
+- **Observation.** price, currency, stock flag, originating search query, timestamp.
+- **Watch.** a product a client wants re-checked, with an optional target price.
+- **Alert.** derived on write: price moves of 1% or more, stock flips, and target reached (fires once per crossing).
+- **AvailabilityMonitor.** re-runs the search that surfaced each watched product and keeps the result whose id matches. Providers expose search, not get-by-id, which is why the query is stored. Runs on demand via `POST /watches/check` or on a daemon thread when `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` is set.
+
+Stores: in-memory (bounded per product and per alert list) and SQLite (three tables, indexed by product). Both share the diff logic in `tracking/store.py`.

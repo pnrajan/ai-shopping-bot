@@ -19,6 +19,18 @@ metadata, median of 20 requests. LLM call counts from `metadata.llm_calls`, asse
 | Clarification: "I want to buy something" | 1 | 0 | < 1 |
 | Essentials + rationale | 4 | 1 | < 1 |
 
+## Tracking, 2026-11-15
+
+`AvailabilityStore.record` runs once per cache miss on the 10 products a search returns. Median
+of 20 calls, same machine and method as above.
+
+| Store | Added per search (ms) | Notes |
+|---|---:|---|
+| `memory` (default) | < 0.1 | Bounded list per product |
+| `sqlite` | 6 | One insert per product plus a lookup of the previous row; shares the session DB file |
+
+Cache hits add nothing. The monitor runs off the request path.
+
 Pipeline overhead is negligible. Live latency is dominated by provider and model round trips.
 Record live numbers per provider here when a key is available, with model ids and region.
 

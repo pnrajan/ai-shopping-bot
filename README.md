@@ -17,6 +17,7 @@ Runs fully offline by default with a deterministic fake LLM and fake catalog. No
 - **Multi-provider LLM routing.** OpenAI, SiliconFlow, and OpenRouter behind one client. Pick a model per role.
 - **Per-request LLM budget.** Default 4 calls. The happy path uses 2. Overruns raise instead of silently continuing.
 - **Pluggable state.** In-memory or SQLite sessions. In-memory or Redis cache with 24-hour TTL.
+- **Price and availability tracking.** Every product seen becomes an observation. Watch an item, get alerts on price drops, target price, and stock changes, with a history endpoint per product.
 - **Production basics.** API key auth, rate limiting, optional OpenTelemetry traces, Dockerfile.
 
 ## Quick start
@@ -117,6 +118,20 @@ Response:
 
 Direct catalog search with no LLM. Useful for checking a provider.
 
+### Tracking
+
+Every product returned by a search is recorded as an observation (provider, id, price, stock, time). Enabled by default in memory; set `SHOPBOT_TRACKING=sqlite` to persist.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /products/{provider}/{id}/history` | Stats (current, min, max, avg price, availability ratio) plus observations and alerts |
+| `POST /watches` | Watch a product. Body: `provider`, `product_id`, optional `target_price`, `query` |
+| `GET /watches` · `DELETE /watches/{id}` | List or remove watches |
+| `POST /watches/check` | Re-check every watch against its provider now. Returns new alerts |
+| `GET /alerts` | Recent alerts: `price_drop`, `price_rise`, `back_in_stock`, `out_of_stock`, `target_reached` |
+
+Set `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` to re-check watches on a background loop.
+
 ### `GET /health`
 
 Returns status and version.
@@ -154,6 +169,7 @@ ai_shopping_bot/
 ├── stages/      # one class per pipeline stage
 ├── session/     # SessionStore: in-memory and SQLite
 ├── cache/       # TTL cache: in-memory or Redis
+├── tracking/    # price history, watches, alerts, availability monitor
 ├── api/         # app factory, wiring, auth, rate limit, tracing
 ├── pipeline.py
 └── settings.py  # the only place model names and keys live

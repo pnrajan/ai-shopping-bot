@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from ai_shopping_bot import __version__
 from ai_shopping_bot.api.security import RateLimiter, make_guard
+from ai_shopping_bot.api.tracking_routes import build_tracking_router
 from ai_shopping_bot.api.wiring import Services, build_services
 from ai_shopping_bot.contracts.chat import ChatRequest, ChatResponse
 from ai_shopping_bot.contracts.context import LLMBudgetExceeded
@@ -22,24 +23,38 @@ from ai_shopping_bot.settings import Settings, get_settings
 log = get_logger("api")
 
 
+def _lifespan(settings: Settings, services: Services | None):
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        app.state.services = services or build_services(settings)
+        log_event(
+            log,
+            "startup",
+            llm=settings.llm,
+            catalog=settings.catalog,
+            store=settings.session_store,
+            tracking=settings.tracking,
+        )
+        monitor = app.state.services.monitor
+        if monitor:
+            monitor.start()
+        yield
+        if monitor:
+            monitor.stop()
+
+    return lifespan
+
+
 def create_app(settings: Settings | None = None, services: Services | None = None) -> FastAPI:
     settings = settings or get_settings()
     limiter = RateLimiter(settings.rate_limit_per_minute)
     guard = make_guard(settings, limiter)
 
-    @asynccontextmanager
-    async def lifespan(app: FastAPI):
-        app.state.services = services or build_services(settings)
-        log_event(
-            log, "startup", llm=settings.llm, catalog=settings.catalog, store=settings.session_store
-        )
-        yield
-
     app = FastAPI(
         title="AI Shopping Bot API",
         version=__version__,
         description="Chat endpoint for a personal shopping assistant.",
-        lifespan=lifespan,
+        lifespan=_lifespan(settings, services),
     )
 
     def svc(request: Request) -> Services:
@@ -70,6 +85,8 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         qu = QueryUnderstanding(query=q, canonical_query=q, search_queries=[q])
         products, _ = s.search.search(qu, limit=max(1, min(limit, 50)))
         return products
+
+    app.include_router(build_tracking_router(settings, guard, svc))
 
     @app.exception_handler(Exception)
     async def unhandled(request: Request, _exc: Exception) -> JSONResponse:

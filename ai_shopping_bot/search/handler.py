@@ -10,6 +10,7 @@ from ai_shopping_bot.contracts.understanding import QueryUnderstanding
 from ai_shopping_bot.logging import get_logger, log_event
 from ai_shopping_bot.providers.base import CatalogProvider
 from ai_shopping_bot.search import filters, relevance
+from ai_shopping_bot.tracking.store import AvailabilityStore
 
 log = get_logger("search")
 
@@ -22,9 +23,11 @@ class SearchHandler:
         cache: SemanticCache | None = None,
         timeout_s: float = 8.0,
         default_limit: int = 10,
+        tracker: AvailabilityStore | None = None,
     ):
         self._provider = provider
         self._cache = cache
+        self._tracker = tracker
         self._timeout = timeout_s
         self._limit = default_limit
 
@@ -40,6 +43,10 @@ class SearchHandler:
             return self._finish(qu, products, limit, from_cache=True, provider_calls=0)
         results = self._fetch(queries, qu.category, limit)
         merged = _dedupe([p for r in results for p in r.products])
+        if self._tracker and merged:
+            alerts = self._tracker.record(merged, query=qu.canonical_query)
+            if alerts:
+                log_event(log, "tracking.alerts", count=len(alerts))
         if self._cache and merged:
             self._cache.put(key, [p.model_dump() for p in merged])
         return self._finish(qu, merged, limit, from_cache=False, provider_calls=len(results))

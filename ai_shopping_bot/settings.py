@@ -79,6 +79,17 @@ class Settings(BaseSettings):
 
     otel_endpoint: str | None = Field(None, description="OTLP HTTP endpoint for stage spans")
 
+    tracking: Literal["off", "memory", "sqlite"] = Field(
+        "memory", description="Price and availability history for every product seen"
+    )
+    tracking_sqlite_path: str | None = Field(
+        None, description="Defaults to sqlite_path; tables are separate from sessions"
+    )
+    tracking_monitor_interval_s: float = Field(
+        0, ge=0, description="Re-check watched products every N seconds. 0 disables the loop"
+    )
+    tracking_history_limit: int = 100
+
     enrich_comparison: bool = True
     enrich_essentials: bool = True
     enrich_rationale: bool = True

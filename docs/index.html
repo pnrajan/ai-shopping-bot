@@ -78,6 +78,11 @@ description: A conversational shopping assistant API. One LLM call to understand
         <h3>Production basics included</h3>
         <p>SQLite or in-memory sessions. Redis or in-memory cache. API key auth, rate limiting, OpenTelemetry traces, and a Dockerfile.</p>
       </div>
+      <div class="tile tile--wide reveal">
+        <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 5-8 4 5"/><path d="M3 21h18"/></svg></div>
+        <h3>Prices and stock, tracked</h3>
+        <p>Every product seen becomes an observation. Watch an item and get alerts on price drops, a target price, or stock changes. History per product, re-checks on a schedule.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -158,12 +163,12 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">API surface</p>
-      <h2>Three endpoints. One hard budget.</h2>
+      <h2>Chat, search, track. One hard budget.</h2>
     </div>
     <div class="band reveal">
       <div><b>POST</b><span><code>/chat</code> · reply + structured products</span></div>
       <div><b>GET</b><span><code>/products/search</code> · catalog, no LLM</span></div>
-      <div><b>GET</b><span><code>/health</code> · status and version</span></div>
+      <div><b>GET</b><span><code>/products/{provider}/{id}/history</code> · price and stock over time</span></div>
       <div><b>4</b><span>LLM calls per request, hard budget</span></div>
     </div>
   </div>

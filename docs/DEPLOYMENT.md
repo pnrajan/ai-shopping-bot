@@ -38,6 +38,10 @@ Every setting has a `SHOPBOT_` prefix except provider keys, which keep their con
 | `SHOPBOT_SQLITE_PATH` | `shopbot.db` | Mount a volume here in Docker |
 | `SHOPBOT_CACHE_TTL_S` | `86400` | Search result cache TTL |
 | `SHOPBOT_LLM_MAX_CALLS_PER_REQUEST` | `4` | Hard budget per chat turn |
+| `SHOPBOT_TRACKING` | `memory` | `off`, `memory`, or `sqlite`. Price and availability history for every product seen |
+| `SHOPBOT_TRACKING_SQLITE_PATH` | unset | Defaults to `SHOPBOT_SQLITE_PATH`. Separate tables from sessions |
+| `SHOPBOT_TRACKING_MONITOR_INTERVAL_S` | `0` | Re-check watched products every N seconds in a background thread. `0` disables |
+| `SHOPBOT_TRACKING_HISTORY_LIMIT` | `100` | Default observations returned by the history endpoint |
 | `SHOPBOT_API_KEY` | unset | When set, clients must send `X-API-Key` |
 | `SHOPBOT_RATE_LIMIT_PER_MINUTE` | `60` | Per API key, or per client IP when no key |
 | `SHOPBOT_OTEL_ENDPOINT` | unset | OTLP HTTP endpoint for per-stage spans. Needs `pip install ".[otel]"` |
