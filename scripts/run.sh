@@ -3,7 +3,7 @@
 #
 #   bash scripts/run.sh              # production-style, single worker
 #   bash scripts/run.sh --dev        # auto-reload on code changes
-#   bash scripts/run.sh --workers 4  # multiple workers (needs sqlite/redis state, see docs/DEPLOYMENT.md)
+#   bash scripts/run.sh --workers 4  # multiple workers (needs SHOPPER_SESSION_STORE=sqlite, see docs/DEPLOYMENT.md)
 #
 # Reads .env if present. Host and port come from SHOPPER_HOST / SHOPPER_PORT (default 127.0.0.1:8000).
 set -euo pipefail
@@ -14,17 +14,22 @@ WORKERS=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --dev|--reload) RELOAD=1 ;;
+    --workers=*) WORKERS="${1#--workers=}"; WORKERS_SET=1 ;;
     --workers)
-      shift
-      if [ $# -eq 0 ] || ! [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
-        echo "--workers needs a positive integer" >&2; exit 2
-      fi
-      WORKERS="$1" ;;
+      [ $# -ge 2 ] || { echo "--workers needs a positive integer" >&2; exit 2; }
+      shift; WORKERS="$1"; WORKERS_SET=1 ;;
     -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
     *) echo "unknown flag: $1" >&2; exit 2 ;;
   esac
   shift
 done
+
+if [ "${WORKERS_SET:-0}" = "1" ] && ! [[ "$WORKERS" =~ ^[1-9][0-9]*$ ]]; then
+  echo "--workers needs a positive integer" >&2; exit 2
+fi
+if [ "$RELOAD" = "1" ] && [ "${WORKERS_SET:-0}" = "1" ]; then
+  echo "--dev (reload) runs a single process; it cannot be combined with --workers" >&2; exit 2
+fi
 
 VENV="${VENV:-.venv}"
 if [ -z "${VIRTUAL_ENV:-}" ] && [ -f "$VENV/bin/activate" ]; then
@@ -56,9 +61,9 @@ if [ "$RELOAD" = "1" ]; then
   echo "==> dev server with reload on http://$HOST:$PORT  (docs at /docs)"
 else
   args+=(--workers "$WORKERS")
-  if [ "$WORKERS" -gt 1 ] && [ "${SHOPPER_SESSION_STORE:-memory}" = "memory" ]; then
-    echo "WARNING: $WORKERS workers with SHOPPER_SESSION_STORE=memory. Sessions will not be shared" >&2
-    echo "         between workers, so refinement turns may miss. Use sqlite or redis (docs/DEPLOYMENT.md)." >&2
+  if [ "$WORKERS" -gt 1 ] && [ "${SHOPPER_SESSION_STORE:-memory}" != "sqlite" ]; then
+    echo "WARNING: $WORKERS workers with SHOPPER_SESSION_STORE=${SHOPPER_SESSION_STORE:-memory}. Sessions are per" >&2
+    echo "         process, so refinement turns may miss. Set SHOPPER_SESSION_STORE=sqlite (docs/DEPLOYMENT.md)." >&2
   fi
   echo "==> serving on http://$HOST:$PORT with $WORKERS worker(s)  (docs at /docs)"
 fi

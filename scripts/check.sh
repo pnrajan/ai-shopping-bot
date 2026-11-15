@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 # Run every guardrail CI runs, in the same order. Exit non-zero on first failure.
 #
-#   bash scripts/check.sh                 # full run
-#   bash scripts/check.sh -k refine -x    # extra args are passed to pytest only
+#   bash scripts/check.sh                 # full run, same as CI
+#   bash scripts/check.sh -k refine -x    # extra args go to pytest; coverage gate is skipped
 set -euo pipefail
 cd "$(dirname "$0")/.."
+
+case "${1:-}" in -h|--help) sed -n '2,5p' "$0"; exit 0 ;; esac
 
 VENV="${VENV:-.venv}"
 if [ -z "${VIRTUAL_ENV:-}" ] && [ -f "$VENV/bin/activate" ]; then
@@ -20,6 +22,11 @@ step lint-imports
 step vulture shopper --min-confidence 80
 step bash scripts/check_root_clutter.sh
 step bash scripts/check_model_names.sh
-step pytest -q --cov=shopper --cov-fail-under=80 "$@"
+if [ $# -eq 0 ]; then
+  step pytest -q --cov=shopper --cov-fail-under=80
+else
+  echo "(pytest args given: coverage gate skipped)"
+  step pytest -q "$@"
+fi
 
 printf '\nAll checks passed.\n'

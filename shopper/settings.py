@@ -7,6 +7,7 @@ Model ids use the form ``provider/model``. Supported providers: ``openai``, ``si
 from __future__ import annotations
 
 from enum import StrEnum
+from typing import Literal
 
 from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -66,7 +67,7 @@ class Settings(BaseSettings):
     siliconflow_base_url: str | None = Field(None, validation_alias="SILICONFLOW_BASE_URL")
     openrouter_api_key: SecretStr | None = Field(None, validation_alias="OPENROUTER_API_KEY")
 
-    session_store: str = Field("memory", description="memory | sqlite")
+    session_store: Literal["memory", "sqlite"] = "memory"
     sqlite_path: str = "shopper.db"
     cache_ttl_s: int = 24 * 60 * 60
     cache_max_size: int = 1000
