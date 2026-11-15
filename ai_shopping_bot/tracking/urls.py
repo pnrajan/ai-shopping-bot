@@ -4,7 +4,13 @@ from __future__ import annotations
 
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-_DROP_PREFIXES = ("utm_", "ref", "tag", "fbclid", "gclid", "mc_", "_hs")
+_DROP_PREFIXES = ("utm_", "mc_", "_hs")
+_DROP_EXACT = {"ref", "ref_", "tag", "fbclid", "gclid", "msclkid", "igshid"}
+
+
+def _is_tracking_param(name: str) -> bool:
+    n = name.lower()
+    return n in _DROP_EXACT or n.startswith(_DROP_PREFIXES)
 
 
 def normalize_url(url: str) -> str:
@@ -15,7 +21,7 @@ def normalize_url(url: str) -> str:
     query = [
         (k, v)
         for k, v in parse_qsl(parts.query, keep_blank_values=False)
-        if not k.lower().startswith(_DROP_PREFIXES)
+        if not _is_tracking_param(k)
     ]
     path = parts.path.rstrip("/") or "/"
     return urlunsplit(

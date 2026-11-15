@@ -42,6 +42,9 @@ class AvailabilityStore(Protocol):
     def alerts(self, limit: int = 50) -> list[Alert]: ...
     def item(self, provider: str, product_id: str) -> TrackedItem | None: ...
     def item_by_url(self, url: str) -> TrackedItem | None: ...
+    def items_for(self, keys: list[Key]) -> dict[Key, TrackedItem]: ...
+    def touch(self, provider: str, product_id: str) -> None: ...
+    def summary(self, stale_after_s: float) -> dict: ...
     def items(
         self,
         *,
@@ -52,6 +55,7 @@ class AvailabilityStore(Protocol):
         limit: int = 100,
     ) -> list[TrackedItem]: ...
     def count_items(self) -> int: ...
+    def count_alerts(self) -> int: ...
 
 
 def observation_from(product: Product, query: str = "") -> Observation | None:
@@ -129,9 +133,9 @@ def fold(prev: TrackedItem | None, obs: Observation) -> TrackedItem:
         product_id=obs.product_id,
         title=obs.title or (prev.title if prev else ""),
         url=obs.url or (prev.url if prev else ""),
-        price=obs.price,
+        price=obs.price if obs.price is not None else (prev.price if prev else None),
         currency=obs.currency,
-        in_stock=obs.in_stock,
+        in_stock=obs.in_stock if obs.in_stock is not None else (prev.in_stock if prev else None),
         query=obs.query or (prev.query if prev else ""),
         observations=(prev.observations if prev else 0) + 1,
         first_seen=prev.first_seen if prev else obs.observed_at,
@@ -153,7 +157,7 @@ def _matches(
         return False
     if price_max is not None and (it.price is None or it.price > price_max):
         return False
-    return not (stale_after_s is not None and not it.is_stale(stale_after_s, now))
+    return stale_after_s is None or it.is_stale(stale_after_s, now)
 
 
 class _Base:
@@ -183,6 +187,23 @@ class _Base:
 
     def _append(self, obs: Observation, alerts: list[Alert]) -> None:
         raise NotImplementedError
+
+
+def summarize(items: list[TrackedItem], alerts: int, stale_after_s: float) -> dict:
+    now = time.time()
+    prices = [i.price for i in items if i.price is not None]
+    return {
+        "items": len(items),
+        "available": sum(1 for i in items if i.in_stock is True),
+        "unavailable": sum(1 for i in items if i.in_stock is False),
+        "unknown": sum(1 for i in items if i.in_stock is None),
+        "stale": sum(1 for i in items if i.is_stale(stale_after_s, now)),
+        "alerts": alerts,
+        "min_price": min(prices) if prices else None,
+        "max_price": max(prices) if prices else None,
+        "avg_price": round(sum(prices) / len(prices), 2) if prices else None,
+        "last_updated": max((i.updated_at for i in items), default=None),
+    }
 
 
 class InMemoryAvailabilityStore(_Base):
@@ -227,9 +248,32 @@ class InMemoryAvailabilityStore(_Base):
             return self._items.get((provider, product_id))
 
     def item_by_url(self, url: str) -> TrackedItem | None:
+        norm = normalize_url(url)
+        if not norm:
+            return None
         with self._lock:
-            key = self._by_url.get(normalize_url(url))
+            key = self._by_url.get(norm)
             return self._items.get(key) if key else None
+
+    def items_for(self, keys: list[Key]) -> dict[Key, TrackedItem]:
+        with self._lock:
+            return {k: self._items[k] for k in keys if k in self._items}
+
+    def touch(self, provider: str, product_id: str) -> None:
+        with self._lock:
+            it = self._items.get((provider, product_id))
+            if it is not None:
+                it.updated_at = time.time()
+
+    def summary(self, stale_after_s: float) -> dict:
+        with self._lock:
+            items = list(self._items.values())
+            alerts = len(self._alerts)
+        return summarize(items, alerts, stale_after_s)
+
+    def count_alerts(self) -> int:
+        with self._lock:
+            return len(self._alerts)
 
     def items(
         self,
@@ -373,13 +417,67 @@ class SQLiteAvailabilityStore(_Base):
             return self._item_in(c, provider, product_id)
 
     def item_by_url(self, url: str) -> TrackedItem | None:
+        norm = normalize_url(url)
+        if not norm:
+            return None
         with self._lock, self._conn() as c:
             r = c.execute(
                 f"SELECT {self._ITEM_COLS} FROM items WHERE url_norm = ? ORDER BY updated_at DESC "
                 "LIMIT 1",
-                (normalize_url(url),),
+                (norm,),
             ).fetchone()
         return self._row_item(r) if r else None
+
+    def items_for(self, keys: list[Key]) -> dict[Key, TrackedItem]:
+        if not keys:
+            return {}
+        out: dict[Key, TrackedItem] = {}
+        with self._lock, self._conn() as c:
+            for chunk in (keys[i : i + 400] for i in range(0, len(keys), 400)):
+                marks = ",".join("(?, ?)" for _ in chunk)
+                rows = c.execute(
+                    f"SELECT {self._ITEM_COLS} FROM items "
+                    f"WHERE (provider, product_id) IN ({marks})",
+                    [v for k in chunk for v in k],
+                ).fetchall()
+                for r in rows:
+                    it = self._row_item(r)
+                    out[(it.provider, it.product_id)] = it
+        return out
+
+    def touch(self, provider: str, product_id: str) -> None:
+        with self._lock, self._conn() as c:
+            c.execute(
+                "UPDATE items SET updated_at = ? WHERE provider = ? AND product_id = ?",
+                (time.time(), provider, product_id),
+            )
+
+    def summary(self, stale_after_s: float) -> dict:
+        cutoff = time.time() - stale_after_s
+        with self._lock, self._conn() as c:
+            r = c.execute(
+                "SELECT COUNT(*), SUM(in_stock = 1), SUM(in_stock = 0), SUM(in_stock IS NULL), "
+                "SUM(updated_at < ?), MIN(price), MAX(price), AVG(price), MAX(updated_at) "
+                "FROM items",
+                (cutoff,),
+            ).fetchone()
+            alerts = c.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+        return {
+            "items": r[0] or 0,
+            "available": r[1] or 0,
+            "unavailable": r[2] or 0,
+            "unknown": r[3] or 0,
+            "stale": r[4] or 0,
+            "alerts": alerts,
+            "min_price": r[5],
+            "max_price": r[6],
+            "avg_price": round(r[7], 2) if r[7] is not None else None,
+            "last_updated": r[8],
+        }
+
+    def count_alerts(self) -> int:
+        with self._lock, self._conn() as c:
+            return c.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
 
     def items(
         self,

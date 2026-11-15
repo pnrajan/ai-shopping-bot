@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from ai_shopping_bot.api.wiring import Services
 from ai_shopping_bot.contracts.tracking import (
@@ -34,10 +34,10 @@ def build_tracking_router(settings: Settings, guard: Callable, svc: Callable) ->
     def product_history(
         provider: str,
         product_id: str,
-        limit: int | None = None,
+        limit: int | None = Query(None, ge=1, le=1000),
         t: AvailabilityStore = Depends(tracker),
     ) -> ProductHistory:
-        n = max(1, min(limit or settings.tracking_history_limit, 1000))
+        n = limit or settings.tracking_history_limit
         history = t.history(provider, product_id, n)
         if not history:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "no observations for this product")
@@ -77,27 +77,16 @@ def _watch_routes(router: APIRouter, tracker: Callable, svc: Callable) -> None:
 
 def _item_routes(router: APIRouter, tracker: Callable, svc: Callable, settings: Settings) -> None:
     @router.get("/tracking/status", response_model=TrackingStatus)
-    def tracking_status(s: Services = Depends(svc), t: AvailabilityStore = Depends(tracker)):
-        items = t.items(limit=100_000)
-        prices = [i.price for i in items if i.price is not None]
+    def tracking_status(t: AvailabilityStore = Depends(tracker)) -> TrackingStatus:
         stale_after = settings.tracking_stale_after_s
         return TrackingStatus(
             enabled=True,
             store=settings.tracking,
-            items=len(items),
-            available=sum(1 for i in items if i.in_stock is True),
-            unavailable=sum(1 for i in items if i.in_stock is False),
-            unknown=sum(1 for i in items if i.in_stock is None),
-            stale=sum(1 for i in items if i.is_stale(stale_after)),
             stale_after_s=stale_after,
             watches=len(t.watches()),
-            alerts=len(t.alerts(500)),
-            min_price=min(prices) if prices else None,
-            max_price=max(prices) if prices else None,
-            avg_price=round(sum(prices) / len(prices), 2) if prices else None,
-            last_updated=max((i.updated_at for i in items), default=None),
             monitor_interval_s=settings.tracking_monitor_interval_s,
             enrich_cached=settings.tracking_enrich_cached,
+            **t.summary(stale_after),
         )
 
     @router.get("/tracking/items", response_model=list[TrackedItem])
@@ -141,7 +130,9 @@ def _item_routes(router: APIRouter, tracker: Callable, svc: Callable, settings: 
 
     @router.post("/tracking/refresh", response_model=RefreshSummary)
     def tracking_refresh(
-        stale_after_s: float | None = None, limit: int | None = None, s: Services = Depends(svc)
+        stale_after_s: float | None = Query(None, ge=0),
+        limit: int | None = Query(None, ge=1, le=1000),
+        s: Services = Depends(svc),
     ) -> RefreshSummary:
         if s.monitor is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "tracking is disabled")

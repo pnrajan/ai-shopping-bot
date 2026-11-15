@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import time
 from enum import StrEnum
+from typing import Annotated
 
 from pydantic import BaseModel, Field
 
@@ -109,7 +110,9 @@ class ItemRef(BaseModel):
 
 class BulkLookup(BaseModel):
     items: list[ItemRef] = Field(default_factory=list, max_length=200)
-    urls: list[str] = Field(default_factory=list, max_length=200)
+    urls: list[Annotated[str, Field(min_length=1, max_length=2048)]] = Field(
+        default_factory=list, max_length=200
+    )
 
 
 class BulkLookupResponse(BaseModel):

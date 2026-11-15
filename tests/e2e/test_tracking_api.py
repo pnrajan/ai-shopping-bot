@@ -92,3 +92,11 @@ def test_cached_search_is_enriched_with_newer_tracked_state(client: TestClient, 
     again = client.get("/products/search", params={"q": "standing desk", "limit": 2}).json()
     hit = next(p for p in again if p["id"] == pid)
     assert hit["price"] == 1.0 and hit["in_stock"] is False
+
+
+def test_refresh_and_history_reject_bad_bounds(client: TestClient):
+    assert client.post("/tracking/refresh", params={"stale_after_s": -1}).status_code == 422
+    assert client.post("/tracking/refresh", params={"limit": 0}).status_code == 422
+    assert client.post("/tracking/refresh", params={"limit": -1}).status_code == 422
+    assert client.get("/products/fake/x/history", params={"limit": 0}).status_code == 422
+    assert client.post("/tracking/items/bulk", json={"urls": [""]}).status_code == 422

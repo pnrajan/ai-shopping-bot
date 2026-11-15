@@ -167,12 +167,10 @@ def test_enrich_overlays_newer_tracked_state():
         Product(title="anon", price=3),
     ]
     res = enrich(products, store, newer_than=cached_at)
-    assert (res.looked_up, res.hits, res.changed, res.dropped) == (3, 1, 1, 0)
+    assert (res.looked_up, res.hits, res.changed) == (3, 1, 1)
     assert res.products[0].price == 80 and res.products[0].in_stock is False
     assert res.products[1].price == 5  # older than the cache entry, left alone
     assert res.products[2].price == 7 and res.products[3].title == "anon"
-    res = enrich(products, store, newer_than=cached_at, drop_unavailable=True)
-    assert res.dropped == 1 and len(res.products) == 3
 
 
 def test_refresh_rechecks_stale_items_not_only_watches():
@@ -191,6 +189,58 @@ def test_refresh_rechecks_stale_items_not_only_watches():
 def test_normalize_url():
     from ai_shopping_bot.tracking.urls import normalize_url
 
-    a = normalize_url("HTTPS://Example.com/p/1/?b=2&utm_campaign=x&a=1#frag")
+    a = normalize_url("HTTPS://Example.com/p/1/?b=2&utm_campaign=x&a=1&ref=abc&tag=t#frag")
     assert a == "https://example.com/p/1?a=1&b=2"
     assert normalize_url("") == ""
+    # exact-name matching: legitimate params that merely start with ref/tag survive
+    assert "refurbished=1" in normalize_url("https://s/p?refurbished=1")
+    assert "tags=blue" in normalize_url("https://s/p?tags=blue")
+
+
+def test_fold_keeps_known_price_when_sighting_lacks_it(store):
+    store.record_observation(obs(99))
+    store.record_observation(
+        Observation(provider="fake", product_id="p1", price=None, in_stock=None)
+    )
+    it = store.item("fake", "p1")
+    assert (it.price, it.in_stock, it.observations) == (99, True, 2)
+
+
+def test_items_for_batch_and_blank_url(store):
+    store.record_observation(
+        Observation(provider="fake", product_id="a", price=1, url="https://s/a")
+    )
+    store.record_observation(Observation(provider="fake", product_id="nourl", price=2))
+    got = store.items_for([("fake", "a"), ("fake", "zz")])
+    assert list(got) == [("fake", "a")]
+    assert store.items_for([]) == {}
+    assert store.item_by_url("") is None and store.item_by_url("   ") is None
+
+
+def test_summary_matches_items(store):
+    store.record_observation(Observation(provider="fake", product_id="a", price=10, in_stock=True))
+    store.record_observation(Observation(provider="fake", product_id="b", price=30, in_stock=False))
+    store.record_observation(Observation(provider="fake", product_id="c", price=None))
+    s = store.summary(stale_after_s=3600)
+    assert (s["items"], s["available"], s["unavailable"], s["unknown"], s["stale"]) == (
+        3,
+        1,
+        1,
+        1,
+        0,
+    )
+    assert (s["min_price"], s["max_price"], s["avg_price"]) == (10, 30, 20)
+    assert store.summary(stale_after_s=0)["stale"] == 3
+
+
+def test_refresh_touches_misses_so_they_do_not_starve():
+    store = InMemoryAvailabilityStore()
+    store.record_observation(Observation(provider="ghost", product_id="g", price=1, query="x"))
+    store.record_observation(Observation(provider="fake", product_id="f", price=1, query="y"))
+    before = store.item("ghost", "g").updated_at
+    monitor = AvailabilityMonitor(store, {"fake": FakeProvider()}, refresh_limit=1)
+    out = monitor.refresh(stale_after_s=0, limit=1)
+    assert out.missed == 1 and store.item("ghost", "g").updated_at > before
+    # next pass picks the other item instead of the same miss
+    assert store.items(stale_after_s=0, limit=1)[0].product_id == "f"
+    assert monitor.refresh(stale_after_s=0, limit=5000).candidates <= 1

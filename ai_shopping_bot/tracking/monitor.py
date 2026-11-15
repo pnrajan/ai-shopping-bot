@@ -63,13 +63,16 @@ class AvailabilityMonitor:
         for everything seen, not only for watched products.
         """
         started = time.perf_counter()
-        stale_after = self._stale_after if stale_after_s is None else stale_after_s
-        items = self._store.items(stale_after_s=stale_after, limit=limit or self._refresh_limit)
+        stale_after = max(0.0, self._stale_after if stale_after_s is None else stale_after_s)
+        n = self._refresh_limit if limit is None else max(1, min(limit, self._refresh_limit))
+        items = self._store.items(stale_after_s=stale_after, limit=n)
         out = RefreshSummary(candidates=len(items))
         for it in items:
             obs = self._search(it.provider, it.product_id, it.query or it.title)
             out.checked += 1
             if obs is None:
+                # Push it to the back of the queue so unfindable items cannot starve the rest.
+                self._store.touch(it.provider, it.product_id)
                 out.missed += 1
                 continue
             alerts = self._store.record_observation(obs)
@@ -82,6 +85,8 @@ class AvailabilityMonitor:
         return out
 
     def _lookup(self, watch: Watch) -> Observation | None:
+        if watch.provider not in self._providers:
+            return None
         last = self._store.latest(watch.provider, watch.product_id)
         query = (
             watch.query
