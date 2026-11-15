@@ -108,6 +108,7 @@ CI runs the same two commands on Python 3.10, 3.12, and 3.13 for every push and 
 ```
 personal-shopper/
 ├── .github/workflows/ci.yml   # Lint + tests
+├── docs/                      # Architecture and porting plan
 ├── examples/                  # Runnable client examples
 ├── tests/                     # pytest suite
 ├── main.py                    # FastAPI application
@@ -139,17 +140,25 @@ uvicorn main:app --port 8001
 
 **`python` not found.** Use `python3` on systems where `python` is not aliased.
 
+## Design
+
+The target architecture is written up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md) lists what comes over from the author's larger Search Hub codebase, in what order, and what stays behind. In short: one query-understanding call, a refinement filter over products already shown, a small planner and executor over shopping tools, and a 24-hour semantic cache in front of catalog providers. The guiding rule is to show results fast and let the user refine, asking a clarifying question only when there is nothing to search for.
+
 ## Roadmap
 
-Planned next steps, roughly in order. Discussion and progress tracking happen in GitHub Issues.
+Ordered to match the architecture doc. Discussion and progress tracking happen in GitHub Issues.
 
-- [ ] LLM planner that turns a user turn into a shopping plan
-- [ ] Executor that runs the plan and reports back through an orchestrator
-- [ ] Session storage so history does not have to be resent each call
-- [ ] 24-hour result cache in the search index, as providers recommend
-- [ ] Task database for scheduled curation jobs
-- [ ] Product catalog and e-commerce integrations
-- [ ] Authentication, rate limiting, and security headers
+- [ ] Query understanding: one structured LLM call producing canonical query, attributes, search queries, and specialized intents (gift, essentials checklist, rationale)
+- [ ] Response model with `data`, `data_type`, `data_count`, and `clarification_questions`
+- [ ] `product_search` tool against a first catalog provider
+- [ ] Planner pattern table (shopping, comparison, browse) with LLM planner fallback
+- [ ] Sequential executor with per-step results and stop-on-error
+- [ ] Session storage keyed by `conversation_id`, holding turns and last shown products
+- [ ] Refinement filter: narrow stored products on price or feature instead of re-searching
+- [ ] 24-hour semantic cache (Redis when available, in-memory otherwise)
+- [ ] Comparison table, essentials checklist, and product rationale enrichments
+- [ ] `review_summarizer` and `research_product` tools
+- [ ] Authentication, rate limiting, and observability
 
 ## Contributing
 
