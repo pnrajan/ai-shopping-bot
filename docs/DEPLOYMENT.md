@@ -13,8 +13,8 @@ Defaults bind `127.0.0.1:8000` with the fake LLM and fake catalog. Nothing leave
 ## Docker
 
 ```bash
-docker build -t personal-shopper-agent .
-docker run --rm -p 8000:8000 --env-file .env personal-shopper-agent
+docker build -t ai-shopping-bot .
+docker run --rm -p 8000:8000 --env-file .env ai-shopping-bot
 ```
 
 The image runs as a non-root user, binds `0.0.0.0:8000`, and has a `/health` healthcheck. Pass secrets with `--env-file` or your orchestrator's secret store. Never bake them into the image.

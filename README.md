@@ -1,4 +1,4 @@
-# Personal Shopper Agent
+# AI Shopping Bot
 
 [![CI](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -174,8 +174,8 @@ CI runs the same checks on Python 3.11, 3.12, and 3.13. See [CONTRIBUTING.md](CO
 ## Deployment
 
 ```bash
-docker build -t personal-shopper-agent .
-docker run --rm -p 8000:8000 --env-file .env personal-shopper-agent
+docker build -t ai-shopping-bot .
+docker run --rm -p 8000:8000 --env-file .env ai-shopping-bot
 ```
 
 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) covers the environment reference, multi-replica setup, and OpenTelemetry export. Call counts and latency baselines live in [docs/BENCHMARKS.md](docs/BENCHMARKS.md).

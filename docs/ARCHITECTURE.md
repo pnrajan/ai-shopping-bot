@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the design of Personal Shopper Agent. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
+This document describes the design of AI Shopping Bot. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
 
 ## Guiding principle
 
@@ -177,7 +177,7 @@ This is the shape `/chat` returns today. `data_type` tells a client how to rende
 
 ## Scope
 
-Personal Shopper Agent is a single persona. There is no routing between assistants, no UI, and no scraping provider in the default install. If a second persona ever appears it is a second pipeline, not a router.
+AI Shopping Bot is a single persona. There is no routing between assistants, no UI, and no scraping provider in the default install. If a second persona ever appears it is a second pipeline, not a router.
 
 ## Implementation status
 
