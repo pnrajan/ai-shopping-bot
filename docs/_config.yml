@@ -1,0 +1,14 @@
+title: AI Shopping Bot
+description: A conversational shopping assistant API. One LLM call to understand a turn, refinement without re-searching, side-by-side comparisons.
+remote_theme: pages-themes/cayman@v0.2.0
+plugins:
+  - jekyll-remote-theme
+  - jekyll-relative-links
+  - jekyll-seo-tag
+relative_links:
+  enabled: true
+  collections: false
+show_downloads: false
+github:
+  is_project_page: true
+  repository_url: https://github.com/pnrajan/ai-shopping-bot
