@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes where Personal Shopper is heading. The current code is a validated `/chat` endpoint that echoes its input. The design below is the target, distilled from the shopper persona in the author's larger Search Hub platform (`pi-user-personas`), reduced to the pieces a standalone shopping assistant needs.
+This document describes the design of Personal Shopper, distilled from the shopper persona in the author's larger Search Hub platform (`pi-user-personas`) and reduced to the pieces a standalone shopping assistant needs. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
 
 ## Guiding principle
 
@@ -166,7 +166,7 @@ Per `conversation_id`, keep the last turns and the last product list shown. The 
 }
 ```
 
-The current echo response will migrate to this shape. `data_type` tells a client how to render `data`: product cards for `products`, plain text for `general`.
+This is the shape `/chat` returns today. `data_type` tells a client how to render `data`: product cards for `products`, plain text for `general`.
 
 ## What the reference does that this project leaves out
 
