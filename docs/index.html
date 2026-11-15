@@ -7,27 +7,35 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap hero__grid">
     <div>
       <span class="eyebrow">Open source · MIT · Python 3.11+</span>
-      <h1 class="display">Shopping conversations,<br><span class="shine">structured on the first call.</span></h1>
-      <p class="lede">Send a message, get back a reply plus structured product data. Follow-ups that narrow results are filtered in memory with no new search. Comparisons come back as a table.</p>
+      <h1 class="display">Ask like a shopper.<br><span class="shine">Get back products, not paragraphs.</span></h1>
+      <p class="lede">One API call turns "gaming laptop under $1200" into a reply and a typed product list. Say "cheaper" and it filters what you already saw. Say "X vs Y" and it builds the table. Two model calls, start to finish.</p>
       <div class="hero__cta">
-        <a class="btn btn--primary" href="#quickstart">Run it in 60 seconds</a>
-        <a class="btn" href="#pipeline">Explore the pipeline</a>
+        <a class="btn btn--primary" href="#quickstart">Run it locally in 60 seconds</a>
+        <a class="btn" href="#pipeline">See what happens per turn</a>
       </div>
       <div class="hero__meta">
-        <span><b>2</b> LLM calls on the happy path</span>
-        <span><b>0</b> keys needed to try it</span>
-        <span><b>8</b> stages, one class each</span>
+        <span><b>2</b> model calls per turn</span>
+        <span><b>0</b> API keys to try it</span>
+        <span><b>1</b> response shape for every intent</span>
       </div>
     </div>
 
-    <div class="term" id="term" aria-label="Simulated conversation with the API">
-      <div class="term__bar">
-        <span class="term__dots" aria-hidden="true"><i></i><i></i><i></i></span>
-        POST /chat · offline fake catalog
+    <div class="chat" id="chat" aria-label="Interactive demo. Simulated in the browser, mirrors the offline fake catalog.">
+      <div class="chat__bar">
+        <span class="chat__dot" aria-hidden="true"></span>
+        <span>Live demo</span>
         <span class="spacer"></span>
-        <button class="term__replay" id="term-replay" type="button">Replay</button>
+        <span class="chat__badge">fake catalog · 0 LLM keys</span>
+        <button class="term__replay" id="chat-reset" type="button">Reset</button>
       </div>
-      <div class="term__body" id="term-body" aria-live="polite"></div>
+      <div class="chat__thread" id="chat-thread" aria-live="polite"></div>
+      <div class="chat__chips" id="chat-chips"></div>
+      <form class="chat__form" id="chat-form" autocomplete="off">
+        <input class="chat__input" id="chat-input" type="text" placeholder="Ask for a product, refine, or compare two…" aria-label="Message" maxlength="200">
+        <button class="chat__send" type="submit" aria-label="Send">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </button>
+      </form>
     </div>
   </div>
 </section>
@@ -36,39 +44,39 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">Why it feels fast</p>
-      <h2>Fewer round trips. Clearer contracts.</h2>
-      <p>Every design choice trades an LLM call for a deterministic step wherever one exists.</p>
+      <h2>The model speaks twice. Everything else is deterministic.</h2>
+      <p>Each stage spends a model call only when a regex, a lookup table, or a cached result cannot answer first. Latency and cost stay flat as conversations get longer.</p>
     </div>
     <div class="features">
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
-        <h3>One call to understand a turn</h3>
-        <p>Canonical query, filters, intent, and specialized intents (gift, essentials checklist, rationale) in a single structured response.</p>
+        <h3>Understand once, typed</h3>
+        <p>Query, filters, intent, and extras like gift mode or an essentials checklist arrive in one structured response. Nothing downstream re-reads the raw text.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 5h16M7 12h10M10 19h4"/></svg></div>
-        <h3>Refinement without re-searching</h3>
-        <p>"Which of these are under $300?" filters the products already shown. Regex first, LLM only if regex misses.</p>
+        <h3>Follow-ups stay in memory</h3>
+        <p>"Which of these are under $300?" filters what the user already saw. Regex handles it. The model only steps in when regex cannot decide.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></svg></div>
-        <h3>Comparisons</h3>
-        <p>"X vs Y" fetches each product, keeps the best match, and returns a side-by-side table.</p>
+        <h3>"X vs Y" becomes a table</h3>
+        <p>Two targeted searches, best match on each side, and a side-by-side comparison in the data payload. No prose to parse.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M5 19l2-2M17 7l2-2"/></svg></div>
-        <h3>Multi-provider routing</h3>
-        <p>OpenAI, SiliconFlow, and OpenRouter behind one client. Pick a model per role and mix freely.</p>
+        <h3>Any model, per role</h3>
+        <p>OpenAI, SiliconFlow, and OpenRouter behind one client. A small fast model for understanding, a stronger one for the reply. Swap with an env var.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 3 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <h3>Per-request LLM budget</h3>
-        <p>Default 4 calls. The happy path uses 2. Overruns raise instead of silently continuing.</p>
+        <h3>A hard budget per request</h3>
+        <p>Four model calls, maximum. The normal path uses two. Overruns raise an error instead of quietly running up a bill.</p>
       </div>
       <div class="tile reveal">
         <div class="tile__icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/></svg></div>
-        <h3>Pluggable state</h3>
-        <p>In-memory or SQLite sessions. In-memory or Redis cache with 24-hour TTL. API key auth, rate limits, OpenTelemetry, Dockerfile.</p>
+        <h3>Production basics included</h3>
+        <p>SQLite or in-memory sessions. Redis or in-memory cache. API key auth, rate limiting, OpenTelemetry traces, and a Dockerfile.</p>
       </div>
     </div>
   </div>
@@ -78,8 +86,8 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">How it works</p>
-      <h2>Eight stages. Any one can finish the request.</h2>
-      <p>A request context flows through each stage in order. A stage can mark the request done and the rest are skipped, except persist, which always runs. Click a stage, or let it play.</p>
+      <h2>Eight stages. Any one can end the turn early.</h2>
+      <p>A request context flows through the stages in order. When a stage has the answer, the rest are skipped. Only persist always runs. Click a stage, or let it play.</p>
     </div>
     <div class="pipe">
       <div class="rail" id="rail" role="tablist" aria-label="Pipeline stages"></div>
@@ -92,8 +100,8 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">Quick start</p>
-      <h2>Offline by default. No keys.</h2>
-      <p>A deterministic fake LLM and fake catalog ship in the box, so the full pipeline runs on a laptop with nothing configured.</p>
+      <h2>Clone, run, chat. No keys yet.</h2>
+      <p>A deterministic fake LLM and fake catalog ship in the box. The whole pipeline runs on a laptop before you touch a single API key. Edit the request on the right and copy the curl.</p>
     </div>
     <div class="play">
       <div class="reveal">
@@ -133,7 +141,7 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">Going live</p>
-      <h2>Mix providers per role.</h2>
+      <h2>Go live by picking a model per role.</h2>
       <p>Set <code>SHOPBOT_LLM=live</code> and choose a model for each of the four roles. Model ids are <code>provider/model</code>. Keys are read from the environment only, held as secrets, and never logged.</p>
     </div>
     <div class="mixer">
@@ -150,7 +158,7 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="section__head reveal">
       <p class="kicker">API surface</p>
-      <h2>Three endpoints, one budget.</h2>
+      <h2>Three endpoints. One hard budget.</h2>
     </div>
     <div class="band reveal">
       <div><b>POST</b><span><code>/chat</code> · reply + structured products</span></div>
@@ -165,8 +173,8 @@ description: A conversational shopping assistant API. One LLM call to understand
   <div class="wrap">
     <div class="cta reveal">
       <p class="kicker">Read deeper</p>
-      <h2>Design, deployment, numbers.</h2>
-      <p>Pipeline internals and layering rules, the environment reference, and latency baselines per change.</p>
+      <h2>Read the design. Then ship it.</h2>
+      <p>Pipeline internals and layering rules, the full environment reference, and a benchmark row for every change that adds latency or a model call.</p>
       <div class="hero__cta" style="justify-content:center">
         <a class="btn btn--primary" href="{{ '/ARCHITECTURE.html' | relative_url }}">Architecture</a>
         <a class="btn" href="{{ '/DEPLOYMENT.html' | relative_url }}">Deployment</a>
