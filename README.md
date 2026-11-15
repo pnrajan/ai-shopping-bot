@@ -1,6 +1,6 @@
 # Personal Shopper API
 
-[![CI](https://github.com/pankajrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pankajrajan/personal-shopper/actions/workflows/ci.yml)
+[![CI](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
@@ -11,7 +11,7 @@ Runs fully offline by default with a deterministic fake LLM and fake catalog, so
 ## Quick start
 
 ```bash
-git clone https://github.com/pankajrajan/personal-shopper.git
+git clone https://github.com/pnrajan/personal-shopper.git
 cd personal-shopper
 python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
