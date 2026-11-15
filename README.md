@@ -142,7 +142,7 @@ uvicorn main:app --port 8001
 
 ## Design
 
-The target architecture is written up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), and [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md) lists what comes over from the author's larger Search Hub codebase, in what order, and what stays behind. In short: one query-understanding call, a refinement filter over products already shown, a small planner and executor over shopping tools, and a 24-hour semantic cache in front of catalog providers. The guiding rule is to show results fast and let the user refine, asking a clarifying question only when there is nothing to search for.
+The target architecture is written up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md) lists what comes over from the author's larger Search Hub codebase, in what order, and what stays behind. [docs/ENGINEERING_PLAN.md](docs/ENGINEERING_PLAN.md) sets the package layout, core interfaces, phased milestones, and the CI guardrails that keep the codebase from growing the problems the reference did. In short: one query-understanding call, a refinement filter over products already shown, a small planner and executor over shopping tools, and a 24-hour semantic cache in front of catalog providers. The guiding rule is to show results fast and let the user refine, asking a clarifying question only when there is nothing to search for.
 
 ## Roadmap
 
