@@ -19,4 +19,9 @@ jobs:
           cache: pip
       - run: pip install -r requirements-dev.txt
       - run: ruff check .
-      - run: pytest
+      - run: ruff format --check .
+      - run: lint-imports
+      - run: vulture shopper --min-confidence 80
+      - run: bash scripts/check_root_clutter.sh
+      - run: bash scripts/check_model_names.sh
+      - run: pytest --cov=shopper --cov-fail-under=80

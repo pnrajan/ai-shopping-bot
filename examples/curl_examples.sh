@@ -15,15 +15,12 @@ curl -s -X POST "$BASE_URL/chat" \
   }'
 echo
 
-echo "== Follow-up with history =="
+echo "== Refinement in the same conversation =="
 curl -s -X POST "$BASE_URL/chat" \
   -H "Content-Type: application/json" \
   -d '{
-    "recent_turn": "Prefer Android",
-    "history": [
-      {"role": "user", "message": "I need help finding a good smartphone under $500"},
-      {"role": "assistant", "message": "Chat request received"}
-    ],
+    "recent_turn": "which of these are under $300?",
+    "history": [],
     "conversation_id": "session-001"
   }'
 echo

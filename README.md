@@ -4,161 +4,155 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 
-A FastAPI service that exposes a chat endpoint for a personal shopping assistant. Clients send the user's latest message, the conversation history, and a session ID. The service validates the payload and returns a structured response.
+A FastAPI shopping assistant. One `/chat` endpoint takes a user turn, understands it with a single LLM call, searches a product catalog, and replies with text plus structured product data. Follow-up turns that narrow the results ("which of these are under $300?") are filtered in memory without a new search. Comparisons ("X vs Y") fetch each product and return a table.
 
-> **Status: early skeleton.** The `/chat` endpoint currently validates and echoes requests. AI responses, product search, and storage are not implemented yet. See [Roadmap](#roadmap).
+Runs fully offline by default with a deterministic fake LLM and fake catalog, so you can try it with no keys.
 
-## Features
-
-- `POST /chat` endpoint with Pydantic request validation
-- Stateless design: all context travels in the request, so instances scale horizontally
-- Auto-generated OpenAPI docs at `/docs` and `/redoc`
-- Test suite, linting, and CI configured out of the box
-
-## Requirements
-
-- Python 3.10 or newer
-- pip
-
-## Quick Start
+## Quick start
 
 ```bash
 git clone https://github.com/pankajrajan/personal-shopper.git
 cd personal-shopper
-
-python -m venv .venv
-source .venv/bin/activate        # Windows: .venv\Scripts\activate
-
+python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python main.py
 ```
 
-The server listens on `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
+```bash
+curl -s -X POST localhost:8000/chat -H 'Content-Type: application/json' -d '{
+  "recent_turn": "gaming laptop under $1200",
+  "history": [],
+  "conversation_id": "demo"
+}'
+```
 
-For hot reload during development:
+Then refine in the same conversation:
 
 ```bash
-uvicorn main:app --reload
+curl -s -X POST localhost:8000/chat -H 'Content-Type: application/json' -d '{
+  "recent_turn": "which of these are under $600?",
+  "history": [],
+  "conversation_id": "demo"
+}'
 ```
+
+Interactive docs at `http://localhost:8000/docs`.
+
+## Going live
+
+Copy `.env.example` to `.env`. Set `SHOPPER_LLM=live` and pick models per role. Each model id is `provider/model`.
+
+| Provider | Model id example | Key variable |
+|---|---|---|
+| OpenAI | `openai/gpt-4o-mini` | `OPENAI_API_KEY` |
+| SiliconFlow | `siliconflow/Qwen/Qwen3-8B` | `SILICONFLOW_API_KEY` |
+| OpenRouter | `openrouter/anthropic/claude-haiku-5-5` | `OPENROUTER_API_KEY` |
+
+Roles are `understanding`, `planning`, `response`, `enrich`. Mix providers freely, for example a cheap SiliconFlow model for understanding and a stronger OpenRouter model for the reply:
+
+```bash
+SHOPPER_LLM=live
+SHOPPER_MODELS__UNDERSTANDING=siliconflow/Qwen/Qwen3-8B
+SHOPPER_MODELS__RESPONSE=openrouter/anthropic/claude-haiku-5-5
+```
+
+SiliconFlow calls disable hidden reasoning (`enable_thinking=false`). OpenRouter calls send `reasoning.enabled=false` and retry without it if the model insists on reasoning.
+
+For a real catalog set `SHOPPER_CATALOG=unwrangle` and `UNWRANGLE_APIKEY`. Keys are read from the environment only and never logged.
 
 ## API
 
 ### `POST /chat`
 
-Request body:
+| Field | Type | Required | Notes |
+|---|---|---|---|
+| `recent_turn` | string | yes | Latest user message |
+| `history` | array of `{role, content}` | no | Prior turns, oldest first. `role` is `user` or `assistant` |
+| `conversation_id` | string | yes | Stable per conversation. Drives refinement and session memory |
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `recent_turn` | string | Yes | The user's latest message |
-| `history` | array of objects | Yes | Prior turns. Each object is free-form, typically `{"role": ..., "message": ...}` |
-| `conversation_id` | string | Yes | Stable identifier for the session |
+Response:
 
-Response body:
+| Field | Type | Notes |
+|---|---|---|
+| `response` | string | Reply text |
+| `data` | array | Products, each with `title`, `price`, `rating`, `brand`, `url`, `provider`, and more |
+| `data_type` | string | `products`, `general`, or `clarification` |
+| `data_count` | int | |
+| `clarification_questions` | array or null | Set when `data_type` is `clarification` |
+| `metadata` | object | `processing_time_ms`, `llm_calls`, `from_cache`, `plan`, per-stage timings |
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `message` | string | Acknowledgement text |
-| `conversation_id` | string | Echo of the request's session ID |
-| `recent_turn` | string | Echo of the user's message |
-| `history_length` | integer | Number of prior turns received |
+### `GET /products/search?q=…&limit=10`
 
-Validation failures return `422 Unprocessable Entity` with FastAPI's standard error body.
+Direct catalog search without the LLM. Useful for checking a provider.
 
-### Example
+### `GET /health`
 
-```bash
-curl -X POST http://localhost:8000/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "recent_turn": "I need a laptop for video editing under $1500",
-    "history": [
-      {"role": "user", "message": "Hello"},
-      {"role": "assistant", "message": "Hi! How can I help you shop today?"}
-    ],
-    "conversation_id": "session-123"
-  }'
+### Auth and limits
+
+Set `SHOPPER_API_KEY` to require an `X-API-Key` header. `SHOPPER_RATE_LIMIT_PER_MINUTE` applies per key, or per client IP when no key is set.
+
+## How a turn flows
+
+```
+understand → refine → compare → plan → execute → respond → enrich → persist
 ```
 
-```json
-{
-  "message": "Chat request received",
-  "conversation_id": "session-123",
-  "recent_turn": "I need a laptop for video editing under $1500",
-  "history_length": 2
-}
-```
+- **understand**: one structured LLM call. Canonical query, attributes, search queries, intent, and specialized intents (gift, essentials checklist, rationale). Asks a clarifying question only when nothing is searchable, and at most once per conversation.
+- **refine**: if the session holds products and the turn narrows them, filter and return. Regex first, LLM only when regex misses.
+- **compare**: for comparison intent, search each named product and keep the best match of each.
+- **plan**: pattern table by intent. LLM planner only for unknown intents.
+- **execute**: run tool steps. Tools: `product_search`, `review_summarizer`, `research_product`.
+- **respond**: one LLM call to write the reply, or a template when budget is spent.
+- **enrich**: comparison table, essentials checklist, rationale, each toggleable.
+- **persist**: save turns and shown products for the next turn.
 
-More examples live in [`examples/`](./examples/):
+Every request has an LLM budget (default 4 calls). The happy path uses 2. Exceeding the budget raises instead of silently continuing.
 
-- [`curl_examples.sh`](./examples/curl_examples.sh) - shell script with curl requests
-- [`python_client.py`](./examples/python_client.py) - Python client with multi-turn history
+Design rationale and the rules the code follows are in [docs/ENGINEERING_PLAN.md](docs/ENGINEERING_PLAN.md). Target architecture is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md) records what was carried over from the author's larger Search Hub codebase.
 
 ## Development
 
 ```bash
-pip install -r requirements-dev.txt
-ruff check .
-pytest
+pip install -e ".[dev]"
+ruff check . && ruff format --check .
+lint-imports                      # layer contract
+vulture shopper --min-confidence 80
+bash scripts/check_root_clutter.sh
+bash scripts/check_model_names.sh
+pytest --cov=shopper --cov-fail-under=80
 ```
 
-CI runs the same two commands on Python 3.10, 3.12, and 3.13 for every push and pull request.
+CI runs all of the above on Python 3.10, 3.12, and 3.13.
 
-### Project layout
+### Layout
 
 ```
-personal-shopper/
-├── .github/workflows/ci.yml   # Lint + tests
-├── docs/                      # Architecture and porting plan
-├── examples/                  # Runnable client examples
-├── tests/                     # pytest suite
-├── main.py                    # FastAPI application
-├── pyproject.toml             # Metadata, ruff and pytest config
-├── requirements.txt           # Runtime dependencies
-└── requirements-dev.txt       # Dev dependencies
+shopper/
+├── contracts/   # pure data: chat, product, understanding, plan, tools, context
+├── llm/         # LLMClient (OpenAI-compatible, budgeted), FakeLLM, prompts
+├── providers/   # CatalogProvider protocol, FakeProvider, UnWrangleProvider
+├── search/      # handler, relevance, filters
+├── tools/       # registry and three tools
+├── stages/      # one class per pipeline stage
+├── session/     # SessionStore: in-memory and SQLite
+├── cache/       # normalized-key TTL cache, in-memory or Redis
+├── api/         # app factory, wiring, auth and rate limit
+├── pipeline.py
+└── settings.py  # the only place model names and keys live
 ```
 
-### Dependencies
-
-| Package | Minimum | Purpose |
-|---------|---------|---------|
-| fastapi | 0.163 | Web framework |
-| uvicorn | 0.54 | ASGI server |
-| pydantic | 2.14 | Request validation |
-| pytest | 9.2 | Tests (dev) |
-| httpx2 | 2.16 | Test client transport (dev) |
-| ruff | 0.17 | Lint and import sorting (dev) |
-
-## Troubleshooting
-
-**Port 8000 in use.** Pick another port:
-
-```bash
-uvicorn main:app --port 8001
-```
-
-**`ModuleNotFoundError`.** Activate the virtual environment and reinstall dependencies.
-
-**`python` not found.** Use `python3` on systems where `python` is not aliased.
-
-## Design
-
-The target architecture is written up in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), [docs/PORTING_PLAN.md](docs/PORTING_PLAN.md) lists what comes over from the author's larger Search Hub codebase, in what order, and what stays behind. [docs/ENGINEERING_PLAN.md](docs/ENGINEERING_PLAN.md) sets the package layout, core interfaces, phased milestones, and the CI guardrails that keep the codebase from growing the problems the reference did. In short: one query-understanding call, a refinement filter over products already shown, a small planner and executor over shopping tools, and a 24-hour semantic cache in front of catalog providers. The guiding rule is to show results fast and let the user refine, asking a clarifying question only when there is nothing to search for.
+Layers import downward only, checked by `import-linter`.
 
 ## Roadmap
 
-Ordered to match the architecture doc. Discussion and progress tracking happen in GitHub Issues.
+Behind optional extras, each landing only with a before/after measurement:
 
-- [ ] Query understanding: one structured LLM call producing canonical query, attributes, search queries, and specialized intents (gift, essentials checklist, rationale)
-- [ ] Response model with `data`, `data_type`, `data_count`, and `clarification_questions`
-- [ ] `product_search` tool against a first catalog provider
-- [ ] Planner pattern table (shopping, comparison, browse) with LLM planner fallback
-- [ ] Sequential executor with per-step results and stop-on-error
-- [ ] Session storage keyed by `conversation_id`, holding turns and last shown products
-- [ ] Refinement filter: narrow stored products on price or feature instead of re-searching
-- [ ] 24-hour semantic cache (Redis when available, in-memory otherwise)
-- [ ] Comparison table, essentials checklist, and product rationale enrichments
-- [ ] `review_summarizer` and `research_product` tools
-- [ ] Authentication, rate limiting, and observability
+- [ ] Indexed hybrid search in front of the live provider
+- [ ] Cross-encoder reranker
+- [ ] Query expansion
+- [ ] Second catalog provider
+- [ ] OpenTelemetry export of per-stage timings
+- [ ] Dockerfile and deployment guide
 
 ## Contributing
 

@@ -25,3 +25,8 @@ env/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local state
+shopper.db
+*.db
+!.env.example

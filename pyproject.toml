@@ -1,7 +1,7 @@
 [project]
 name = "personal-shopper"
-version = "0.2.0"
-description = "FastAPI skeleton for a personal shopping assistant chat API"
+version = "0.3.0"
+description = "FastAPI personal shopping assistant: query understanding, product search, refinement, and comparison over a staged pipeline"
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Pankaj Rajan" }]
@@ -10,17 +10,65 @@ dependencies = [
     "fastapi>=0.163.0,<1.0",
     "uvicorn[standard]>=0.54.0,<1.0",
     "pydantic>=2.14.3,<3.0",
+    "pydantic-settings>=2.6,<3.0",
+    "openai>=1.60,<3.0",
+    "httpx>=0.27",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=9.2.0", "httpx2>=2.16.0", "ruff>=0.17.5"]
+dev = [
+    "pytest>=9.2.0",
+    "pytest-cov>=6.0",
+    "respx>=0.22",
+    "ruff>=0.17.5",
+    "import-linter>=2.0",
+    "vulture>=2.11",
+]
+redis = ["redis>=5.0"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP", "B"]
+select = ["E", "F", "I", "UP", "B", "BLE", "G", "C90", "PLR0915", "SIM", "RET"]
+per-file-ignores = { "tests/*" = ["PLR0915", "E501"], "shopper/api/app.py" = ["BLE001", "B008"] }
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.pylint]
+max-statements = 40
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-q"
+
+[tool.coverage.run]
+source = ["shopper"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+
+[tool.importlinter]
+root_package = "shopper"
+exclude_type_checking_imports = true
+
+[[tool.importlinter.contracts]]
+name = "layers"
+type = "layers"
+layers = [
+    "shopper.api",
+    "shopper.pipeline",
+    "shopper.stages",
+    "shopper.tools",
+    "shopper.search",
+    "shopper.session | shopper.cache",
+    "shopper.providers | shopper.llm",
+    "shopper.contracts",
+]
+
+[tool.vulture]
+min_confidence = 80
+paths = ["shopper"]

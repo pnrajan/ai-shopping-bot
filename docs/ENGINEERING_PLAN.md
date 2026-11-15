@@ -126,7 +126,7 @@ class RequestContext:
     response: ChatResponse | None = None
     llm_budget: LLMBudget = field(default_factory=lambda: LLMBudget(max_calls=4))
     trace: list[StageEvent] = field(default_factory=list)
-    done: bool = False          # a stage sets this to short-circuit (e.g. refinement hit)
+    done: bool = False  # a stage sets this to short-circuit (e.g. refinement hit)
 ```
 
 ### `Stage`
@@ -134,6 +134,7 @@ class RequestContext:
 ```python
 class Stage(Protocol):
     name: str
+
     def run(self, ctx: RequestContext) -> RequestContext: ...
 ```
 
@@ -144,7 +145,10 @@ Pipeline loop is ten lines: for each stage, if `ctx.done` break, else time it, r
 ```python
 class CatalogProvider(Protocol):
     name: str
-    def search(self, queries: list[str], *, category: str | None, limit: int, timeout_s: float) -> ProviderResults: ...
+
+    def search(
+        self, queries: list[str], *, category: str | None, limit: int, timeout_s: float
+    ) -> ProviderResults: ...
 ```
 
 Contract test suite in `tests/contract/` runs the same assertions against every provider using recorded responses. A new provider is a file plus a fixture.
@@ -163,7 +167,14 @@ class SessionStore(Protocol):
 
 ```python
 class LLMClient:
-    def call(self, *, role: ModelRole, messages: list[Message], schema: type[BaseModel] | None, budget: LLMBudget) -> LLMResult: ...
+    def call(
+        self,
+        *,
+        role: ModelRole,
+        messages: list[Message],
+        schema: type[BaseModel] | None,
+        budget: LLMBudget,
+    ) -> LLMResult: ...
 ```
 
 `role` maps to a model name in settings. `schema` forces structured output. `budget.consume()` raises `LLMBudgetExceeded` on the fifth call. Every call emits one structured log event with role, latency, tokens, and cache hit.
