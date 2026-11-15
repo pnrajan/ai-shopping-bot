@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the design of Personal Shopper, distilled from the shopper persona in the author's larger Search Hub platform (`pi-user-personas`) and reduced to the pieces a standalone shopping assistant needs. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
+This document describes the design of Personal Shopper. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
 
 ## Guiding principle
 
@@ -175,9 +175,9 @@ Per `conversation_id`, keep the last turns, the last product list shown, and a c
 
 This is the shape `/chat` returns today. `data_type` tells a client how to render `data`: product cards for `products`, plain text for `general`.
 
-## What the reference does that this project leaves out
+## Scope
 
-The reference platform routes between many personas (shopper, researcher, reminders, tasks, news, events, weather) with a persona router, multi-persona synthesis, a Streamlit UI, nginx, Docker, Redis, MongoDB, and a separate knowledge base service. Personal Shopper keeps only the shopper path. Anything that exists to arbitrate between personas or to serve non-shopping intents is out of scope.
+Personal Shopper is a single persona. There is no routing between assistants, no UI, and no scraping provider in the default install. If a second persona ever appears it is a second pipeline, not a router.
 
 ## Implementation status
 

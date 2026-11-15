@@ -1,36 +1,51 @@
 # Contributing
 
-Thanks for your interest in contributing.
+Thanks for your interest. Issues and pull requests are welcome.
 
 ## Setup
 
 ```bash
 git clone https://github.com/<your-username>/personal-shopper.git
 cd personal-shopper
-python -m venv venv && source venv/bin/activate
-pip install -r requirements-dev.txt
+bash scripts/setup.sh --dev
+source .venv/bin/activate
 ```
 
 ## Workflow
 
-1. Open an issue describing the change before large work.
-2. Fork and create a branch from `main`.
-3. Keep changes focused. One concern per pull request.
-4. Run checks before pushing:
+1. Open an issue before large changes so the approach can be agreed first.
+2. Branch from `main`. Keep one concern per pull request.
+3. Run `bash scripts/check.sh` before pushing. It runs exactly what CI runs.
+4. Open a pull request describing what changed and why.
 
-   ```bash
-   ruff check .
-   pytest
-   ```
+## Code rules
 
-5. Open a pull request. Describe what changed and why.
+These are enforced by CI, not just convention.
+
+| Rule | Enforced by |
+|---|---|
+| A request is a sequence of stages. One class per stage, one `run(ctx)` method, under 40 statements. | ruff `PLR0915`, `C901` |
+| Catch specific exceptions. The only broad handler lives at the HTTP boundary in `shopper/api/`. | ruff `BLE001` |
+| Layers import downward only: `api` → `pipeline` → `stages` → `tools` → `search` → `session`/`cache` → `providers`/`llm` → `contracts`. | `import-linter` |
+| Every LLM call goes through `LLMClient` and spends from the per-request budget. | code review, `LLMBudget` |
+| Model names live in `shopper/settings.py` only. Code refers to roles. | `scripts/check_model_names.sh` |
+| Nothing touches network or disk at import time. Clients are built in the app lifespan and injected. | code review |
+| Delete superseded code in the same PR that replaces it. | `vulture` |
+| Repo root holds config and `main.py` only. Scripts go in `scripts/`. | `scripts/check_root_clutter.sh` |
+| Core dependencies stay small. Anything heavy is an optional extra. | `pyproject.toml` extras |
+| Log with event names and fields, not f-strings. | ruff `G004` |
+| Pure functions get unit tests that run without network. Coverage gate is 80%. | `pytest-cov` |
+
+## Definition of done
+
+- New behavior has a unit test that runs offline.
+- No new model literal, blind except, or LLM call outside the places above.
+- If the change adds latency, an LLM call, or a dependency, `docs/BENCHMARKS.md` gets a row.
+- Docs updated where behavior changed.
 
 ## Style
 
-- Python 3.11+ compatible.
-- Follow docs/ENGINEERING_PLAN.md: one stage per concern, no blind excepts, no model names outside settings.py, LLM calls only through LLMClient.
-- Type hints on public functions.
-- Docstrings on public classes and functions. Keep them proportional to the code.
+- Python 3.11+. Type hints on public functions. Docstrings proportional to the code.
 - Formatting and linting via `ruff`.
 
 ## License
