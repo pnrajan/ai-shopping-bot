@@ -14,7 +14,12 @@ WORKERS=1
 while [ $# -gt 0 ]; do
   case "$1" in
     --dev|--reload) RELOAD=1 ;;
-    --workers) shift; WORKERS="${1:?--workers needs a number}" ;;
+    --workers)
+      shift
+      if [ $# -eq 0 ] || ! [[ "$1" =~ ^[1-9][0-9]*$ ]]; then
+        echo "--workers needs a positive integer" >&2; exit 2
+      fi
+      WORKERS="$1" ;;
     -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
     *) echo "unknown flag: $1" >&2; exit 2 ;;
   esac
@@ -51,6 +56,10 @@ if [ "$RELOAD" = "1" ]; then
   echo "==> dev server with reload on http://$HOST:$PORT  (docs at /docs)"
 else
   args+=(--workers "$WORKERS")
+  if [ "$WORKERS" -gt 1 ] && [ "${SHOPPER_SESSION_STORE:-memory}" = "memory" ]; then
+    echo "WARNING: $WORKERS workers with SHOPPER_SESSION_STORE=memory. Sessions will not be shared" >&2
+    echo "         between workers, so refinement turns may miss. Use sqlite or redis (docs/DEPLOYMENT.md)." >&2
+  fi
   echo "==> serving on http://$HOST:$PORT with $WORKERS worker(s)  (docs at /docs)"
 fi
 echo "    mode: llm=${SHOPPER_LLM:-fake} catalog=${SHOPPER_CATALOG:-fake}"

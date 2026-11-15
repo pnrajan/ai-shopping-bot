@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 # Run every guardrail CI runs, in the same order. Exit non-zero on first failure.
+#
+#   bash scripts/check.sh                 # full run
+#   bash scripts/check.sh -k refine -x    # extra args are passed to pytest only
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

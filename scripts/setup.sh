@@ -12,7 +12,7 @@ DEV=0
 for arg in "$@"; do
   case "$arg" in
     --dev) DEV=1 ;;
-    -h|--help) sed -n '2,8p' "$0"; exit 0 ;;
+    -h|--help) sed -n '2,7p' "$0"; exit 0 ;;
     *) echo "unknown flag: $arg" >&2; exit 2 ;;
   esac
 done
