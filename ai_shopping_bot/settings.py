@@ -78,6 +78,8 @@ class Settings(BaseSettings):
     rate_limit_per_minute: int = 60
 
     otel_endpoint: str | None = Field(None, description="OTLP HTTP endpoint for stage spans")
+    log_level: str = Field("INFO", description="DEBUG | INFO | WARNING | ERROR")
+    log_format: Literal["text", "json"] = Field("text", description="Console log line format")
 
     tracking: Literal["off", "memory", "sqlite"] = Field(
         "memory", description="Price and availability history for every product seen"

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Request, status
@@ -17,7 +16,7 @@ from ai_shopping_bot.contracts.context import LLMBudgetExceeded
 from ai_shopping_bot.contracts.product import Product
 from ai_shopping_bot.contracts.understanding import QueryUnderstanding
 from ai_shopping_bot.llm.client import LLMError
-from ai_shopping_bot.logging import get_logger, log_event
+from ai_shopping_bot.logging import configure_logging, get_logger, log_event
 from ai_shopping_bot.settings import Settings, get_settings
 
 log = get_logger("api")
@@ -47,6 +46,7 @@ def _lifespan(settings: Settings, services: Services | None):
 
 def create_app(settings: Settings | None = None, services: Services | None = None) -> FastAPI:
     settings = settings or get_settings()
+    configure_logging(settings.log_level, settings.log_format)
     limiter = RateLimiter(settings.rate_limit_per_minute)
     guard = make_guard(settings, limiter)
 
@@ -93,5 +93,4 @@ def create_app(settings: Settings | None = None, services: Services | None = Non
         log.exception("unhandled", extra={"fields": {"path": request.url.path}})
         return JSONResponse(status_code=500, content={"success": False, "error": "internal error"})
 
-    logging.getLogger("ai_shopping_bot").setLevel(logging.INFO)
     return app

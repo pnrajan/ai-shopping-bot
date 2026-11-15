@@ -67,6 +67,6 @@ else
   fi
   echo "==> serving on http://$HOST:$PORT with $WORKERS worker(s)  (docs at /docs)"
 fi
-echo "    mode: llm=${SHOPBOT_LLM:-fake} catalog=${SHOPBOT_CATALOG:-fake}"
+echo "    mode: llm=${SHOPBOT_LLM:-fake} catalog=${SHOPBOT_CATALOG:-fake} tracking=${SHOPBOT_TRACKING:-memory} monitor=${SHOPBOT_TRACKING_MONITOR_INTERVAL_S:-0}s log=${SHOPBOT_LOG_LEVEL:-INFO}/${SHOPBOT_LOG_FORMAT:-text}"
 
 exec python -m uvicorn "${args[@]}"

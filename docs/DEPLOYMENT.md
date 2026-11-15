@@ -47,6 +47,8 @@ Every setting has a `SHOPBOT_` prefix except provider keys, which keep their con
 | `SHOPBOT_TRACKING_REFRESH_LIMIT` | `50` | Max items re-checked per refresh pass |
 | `SHOPBOT_API_KEY` | unset | When set, clients must send `X-API-Key` |
 | `SHOPBOT_RATE_LIMIT_PER_MINUTE` | `60` | Per API key, or per client IP when no key |
+| `SHOPBOT_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING`, `ERROR` |
+| `SHOPBOT_LOG_FORMAT` | `text` | `text` (`event key=value`) or `json` (one object per line) |
 | `SHOPBOT_OTEL_ENDPOINT` | unset | OTLP HTTP endpoint for per-stage spans. Needs `pip install ".[otel]"` |
 
 ## Multi-replica
@@ -55,7 +57,7 @@ The in-memory session store and cache are per process. For more than one replica
 
 ## Observability
 
-Logs are structured: event name plus a `fields` dict on each record. Point your log handler's formatter at `record.fields`. With `SHOPBOT_OTEL_ENDPOINT` set, each chat turn becomes a root span with one child span per pipeline stage, carrying `ms`, plus `llm_calls`, `from_cache`, and `data_count` on the root.
+Logs are structured: event name plus a `fields` dict on each record, written to stderr next to uvicorn's access log. `SHOPBOT_LOG_FORMAT=text` renders `INFO ai_shopping_bot.tracking monitor.refreshed checked=3 updated=3`; `json` renders one object per line with `ts`, `level`, `logger`, `event`, `fields`. Attaching your own handler to the `ai_shopping_bot` logger also works; the console handler is named `ai_shopping_bot.console` and is replaced, not duplicated, on each app build. With `SHOPBOT_OTEL_ENDPOINT` set, each chat turn becomes a root span with one child span per pipeline stage, carrying `ms`, plus `llm_calls`, `from_cache`, and `data_count` on the root.
 
 ## Checklist before exposing publicly
 
