@@ -1,5 +1,5 @@
-from shopper.api.tracing import NoopSink, build_sink
-from shopper.contracts.chat import ChatResponse
+from ai_shopping_bot.api.tracing import NoopSink, build_sink
+from ai_shopping_bot.contracts.chat import ChatResponse
 
 
 def test_build_sink_noop_without_endpoint():

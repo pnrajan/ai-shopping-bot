@@ -3,9 +3,9 @@
 #
 #   bash scripts/run.sh              # production-style, single worker
 #   bash scripts/run.sh --dev        # auto-reload on code changes
-#   bash scripts/run.sh --workers 4  # multiple workers (needs SHOPPER_SESSION_STORE=sqlite, see docs/DEPLOYMENT.md)
+#   bash scripts/run.sh --workers 4  # multiple workers (needs SHOPBOT_SESSION_STORE=sqlite, see docs/DEPLOYMENT.md)
 #
-# Reads .env if present. Host and port come from SHOPPER_HOST / SHOPPER_PORT (default 127.0.0.1:8000).
+# Reads .env if present. Host and port come from SHOPBOT_HOST / SHOPBOT_PORT (default 127.0.0.1:8000).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -52,21 +52,21 @@ if [ -f .env ]; then
   done < .env
 fi
 
-HOST="${SHOPPER_HOST:-127.0.0.1}"
-PORT="${SHOPPER_PORT:-8000}"
+HOST="${SHOPBOT_HOST:-127.0.0.1}"
+PORT="${SHOPBOT_PORT:-8000}"
 
 args=(main:app --host "$HOST" --port "$PORT")
 if [ "$RELOAD" = "1" ]; then
-  args+=(--reload --reload-dir shopper --reload-dir main.py)
+  args+=(--reload --reload-dir ai_shopping_bot --reload-dir main.py)
   echo "==> dev server with reload on http://$HOST:$PORT  (docs at /docs)"
 else
   args+=(--workers "$WORKERS")
-  if [ "$WORKERS" -gt 1 ] && [ "${SHOPPER_SESSION_STORE:-memory}" != "sqlite" ]; then
-    echo "WARNING: $WORKERS workers with SHOPPER_SESSION_STORE=${SHOPPER_SESSION_STORE:-memory}. Sessions are per" >&2
-    echo "         process, so refinement turns may miss. Set SHOPPER_SESSION_STORE=sqlite (docs/DEPLOYMENT.md)." >&2
+  if [ "$WORKERS" -gt 1 ] && [ "${SHOPBOT_SESSION_STORE:-memory}" != "sqlite" ]; then
+    echo "WARNING: $WORKERS workers with SHOPBOT_SESSION_STORE=${SHOPBOT_SESSION_STORE:-memory}. Sessions are per" >&2
+    echo "         process, so refinement turns may miss. Set SHOPBOT_SESSION_STORE=sqlite (docs/DEPLOYMENT.md)." >&2
   fi
   echo "==> serving on http://$HOST:$PORT with $WORKERS worker(s)  (docs at /docs)"
 fi
-echo "    mode: llm=${SHOPPER_LLM:-fake} catalog=${SHOPPER_CATALOG:-fake}"
+echo "    mode: llm=${SHOPBOT_LLM:-fake} catalog=${SHOPBOT_CATALOG:-fake}"
 
 exec python -m uvicorn "${args[@]}"

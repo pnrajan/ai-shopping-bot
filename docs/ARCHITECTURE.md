@@ -1,6 +1,6 @@
 # Architecture
 
-This document describes the design of AI Shopping Bot. As of commit `38cbbbe` the pipeline below is implemented under `shopper/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
+This document describes the design of AI Shopping Bot. As of commit `38cbbbe` the pipeline below is implemented under `ai_shopping_bot/`; the indexed catalog, reranker, and query expansion remain roadmap items behind optional extras.
 
 ## Guiding principle
 
@@ -152,7 +152,7 @@ The structured item returned alongside the conversational reply.
 
 ### Session storage
 
-Per `conversation_id`, keep the last turns, the last product list shown, and a count of clarifications asked. The product list powers refinement; the counter enforces at most one clarification per conversation. `SessionStore` is a small protocol with two backends: in-memory (default) and SQLite (`SHOPPER_SESSION_STORE=sqlite`). Multi-replica deployments need a shared backend; see `docs/DEPLOYMENT.md`.
+Per `conversation_id`, keep the last turns, the last product list shown, and a count of clarifications asked. The product list powers refinement; the counter enforces at most one clarification per conversation. `SessionStore` is a small protocol with two backends: in-memory (default) and SQLite (`SHOPBOT_SESSION_STORE=sqlite`). Multi-replica deployments need a shared backend; see `docs/DEPLOYMENT.md`.
 
 ### Response shape (target)
 

@@ -1,11 +1,11 @@
-from shopper.contracts.chat import ChatRequest
-from shopper.contracts.context import LLMBudget, RequestContext, SessionState
-from shopper.contracts.product import Product
-from shopper.contracts.understanding import QueryUnderstanding
-from shopper.llm.fake import FakeLLM
-from shopper.stages.plan import PATTERNS, PlanStage
-from shopper.stages.respond import RespondStage
-from shopper.tools.registry import get_registry
+from ai_shopping_bot.contracts.chat import ChatRequest
+from ai_shopping_bot.contracts.context import LLMBudget, RequestContext, SessionState
+from ai_shopping_bot.contracts.product import Product
+from ai_shopping_bot.contracts.understanding import QueryUnderstanding
+from ai_shopping_bot.llm.fake import FakeLLM
+from ai_shopping_bot.stages.plan import PATTERNS, PlanStage
+from ai_shopping_bot.stages.respond import RespondStage
+from ai_shopping_bot.tools.registry import get_registry
 
 
 def _ctx(turn="laptop under 1000", intent="shopping", products=None):

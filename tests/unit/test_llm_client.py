@@ -5,15 +5,15 @@ import pytest
 import respx
 from pydantic import BaseModel
 
-from shopper.contracts.context import LLMBudget
-from shopper.llm.client import (
+from ai_shopping_bot.contracts.context import LLMBudget
+from ai_shopping_bot.llm.client import (
     LLMError,
     OpenAICompatibleClient,
     _extra_body,
     _strip_fences,
     split_model,
 )
-from shopper.settings import ModelRole, Settings
+from ai_shopping_bot.settings import ModelRole, Settings
 
 
 class Out(BaseModel):

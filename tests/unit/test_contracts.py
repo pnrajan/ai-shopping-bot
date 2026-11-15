@@ -1,7 +1,7 @@
 import pytest
 
-from shopper.contracts.context import LLMBudget, LLMBudgetExceeded
-from shopper.contracts.understanding import Attribute, QueryUnderstanding
+from ai_shopping_bot.contracts.context import LLMBudget, LLMBudgetExceeded
+from ai_shopping_bot.contracts.understanding import Attribute, QueryUnderstanding
 
 
 def test_budget_raises_when_exhausted():

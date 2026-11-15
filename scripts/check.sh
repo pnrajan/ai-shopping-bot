@@ -19,11 +19,11 @@ step() { printf '\n==> %s\n' "$*"; "$@"; }
 step ruff check .
 step ruff format --check .
 step lint-imports
-step vulture shopper --min-confidence 80
+step vulture ai_shopping_bot --min-confidence 80
 step bash scripts/check_root_clutter.sh
 step bash scripts/check_model_names.sh
 if [ $# -eq 0 ]; then
-  step pytest -q --cov=shopper --cov-fail-under=80
+  step pytest -q --cov=ai_shopping_bot --cov-fail-under=80
 else
   echo "(pytest args given: coverage gate skipped)"
   step pytest -q "$@"

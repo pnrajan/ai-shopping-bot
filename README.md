@@ -1,6 +1,6 @@
 # AI Shopping Bot
 
-[![CI](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml)
+[![CI](https://github.com/pnrajan/ai-shopping-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/pnrajan/ai-shopping-bot/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -24,8 +24,8 @@ Runs fully offline by default with a deterministic fake LLM and fake catalog. No
 Requires Python 3.11 or newer.
 
 ```bash
-git clone https://github.com/pnrajan/personal-shopper.git
-cd personal-shopper
+git clone https://github.com/pnrajan/ai-shopping-bot.git
+cd ai-shopping-bot
 bash scripts/setup.sh        # creates .venv, installs deps, copies .env.example to .env
 bash scripts/run.sh          # serves on http://127.0.0.1:8000
 ```
@@ -66,7 +66,7 @@ All settings come from environment variables or `.env`. See [`.env.example`](.en
 
 ### Going live
 
-Set `SHOPPER_LLM=live` and choose a model per role. Model ids are `provider/model`.
+Set `SHOPBOT_LLM=live` and choose a model per role. Model ids are `provider/model`.
 
 | Provider | Example model id | Key variable |
 |---|---|---|
@@ -77,18 +77,18 @@ Set `SHOPPER_LLM=live` and choose a model per role. Model ids are `provider/mode
 Roles are `understanding`, `planning`, `response`, `enrich`. Mix providers freely:
 
 ```bash
-SHOPPER_LLM=live
-SHOPPER_MODELS__UNDERSTANDING=siliconflow/Qwen/Qwen3-8B
-SHOPPER_MODELS__RESPONSE=openrouter/anthropic/claude-haiku-5-5
+SHOPBOT_LLM=live
+SHOPBOT_MODELS__UNDERSTANDING=siliconflow/Qwen/Qwen3-8B
+SHOPBOT_MODELS__RESPONSE=openrouter/anthropic/claude-haiku-5-5
 ```
 
-For a real catalog set `SHOPPER_CATALOG=unwrangle` and `UNWRANGLE_APIKEY`.
+For a real catalog set `SHOPBOT_CATALOG=unwrangle` and `UNWRANGLE_APIKEY`.
 
 Keys are read from the environment only, held as secrets, and never logged. `.env` is gitignored.
 
 ### Auth and limits
 
-Set `SHOPPER_API_KEY` to require an `X-API-Key` header. `SHOPPER_RATE_LIMIT_PER_MINUTE` applies per key, or per client IP when no key is set.
+Set `SHOPBOT_API_KEY` to require an `X-API-Key` header. `SHOPBOT_RATE_LIMIT_PER_MINUTE` applies per key, or per client IP when no key is set.
 
 ## API
 
@@ -145,7 +145,7 @@ Full design in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 ## Project layout
 
 ```
-shopper/
+ai_shopping_bot/
 ├── contracts/   # pure data models
 ├── llm/         # LLMClient (OpenAI-compatible, budgeted), FakeLLM, prompts
 ├── providers/   # CatalogProvider protocol, FakeProvider, UnWrangleProvider

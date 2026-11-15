@@ -1,6 +1,6 @@
-from shopper.contracts.context import SessionState
-from shopper.contracts.product import Product
-from shopper.session.store import InMemorySessionStore, SQLiteSessionStore
+from ai_shopping_bot.contracts.context import SessionState
+from ai_shopping_bot.contracts.product import Product
+from ai_shopping_bot.session.store import InMemorySessionStore, SQLiteSessionStore
 
 
 def _roundtrip(store):

@@ -27,6 +27,6 @@ env/
 .claude/settings.local.json
 
 # Local state
-shopper.db
+shopbot.db
 *.db
 !.env.example

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from shopper.api import create_app
-from shopper.settings import get_settings
+from ai_shopping_bot.api import create_app
+from ai_shopping_bot.settings import get_settings
 
 app = create_app()
 

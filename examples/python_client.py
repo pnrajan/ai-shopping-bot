@@ -2,7 +2,7 @@
 
 Usage:
     python examples/python_client.py            # server on localhost:8000
-    SHOPPER_URL=http://host:port python examples/python_client.py
+    SHOPBOT_URL=http://host:port python examples/python_client.py
 """
 
 from __future__ import annotations
@@ -11,8 +11,8 @@ import os
 
 import httpx
 
-BASE_URL = os.environ.get("SHOPPER_URL", "http://localhost:8000")
-API_KEY = os.environ.get("SHOPPER_API_KEY")
+BASE_URL = os.environ.get("SHOPBOT_URL", "http://localhost:8000")
+API_KEY = os.environ.get("SHOPBOT_API_KEY")
 
 
 def chat(turn: str, conversation_id: str) -> dict:

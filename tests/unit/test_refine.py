@@ -1,5 +1,5 @@
-from shopper.contracts.product import Product
-from shopper.stages.refine import apply, detect_with_regex
+from ai_shopping_bot.contracts.product import Product
+from ai_shopping_bot.stages.refine import apply, detect_with_regex
 
 
 def test_detects_price_ceiling():

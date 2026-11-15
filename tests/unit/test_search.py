@@ -1,9 +1,9 @@
-from shopper.cache.semantic import InMemoryBackend, SemanticCache
-from shopper.contracts.product import Product
-from shopper.contracts.understanding import Attribute, QueryUnderstanding
-from shopper.providers.fake import FakeProvider
-from shopper.search import filters, relevance
-from shopper.search.handler import SearchHandler
+from ai_shopping_bot.cache.semantic import InMemoryBackend, SemanticCache
+from ai_shopping_bot.contracts.product import Product
+from ai_shopping_bot.contracts.understanding import Attribute, QueryUnderstanding
+from ai_shopping_bot.providers.fake import FakeProvider
+from ai_shopping_bot.search import filters, relevance
+from ai_shopping_bot.search.handler import SearchHandler
 
 
 def _p(title, price, rating=4.0, brand="", desc=""):
@@ -49,7 +49,7 @@ def test_cache_ttl_expiry(monkeypatch):
     backend = InMemoryBackend()
     cache = SemanticCache(backend, ttl_s=10)
     now = [1000.0]
-    monkeypatch.setattr("shopper.cache.semantic.time.time", lambda: now[0])
+    monkeypatch.setattr("ai_shopping_bot.cache.semantic.time.time", lambda: now[0])
     cache.put("k", [1])
     assert cache.get("k") == [1]
     now[0] += 11

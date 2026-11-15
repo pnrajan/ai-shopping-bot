@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 from fastapi.testclient import TestClient
 
-from shopper.api.app import create_app
-from shopper.api.wiring import Services, build_services
-from shopper.llm.fake import FakeLLM
-from shopper.providers.fake import FakeProvider
-from shopper.session.store import InMemorySessionStore
-from shopper.settings import Settings
+from ai_shopping_bot.api.app import create_app
+from ai_shopping_bot.api.wiring import Services, build_services
+from ai_shopping_bot.llm.fake import FakeLLM
+from ai_shopping_bot.providers.fake import FakeProvider
+from ai_shopping_bot.session.store import InMemorySessionStore
+from ai_shopping_bot.settings import Settings
 
 
 class CountingProvider(FakeProvider):

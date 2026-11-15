@@ -73,8 +73,8 @@ def test_direct_product_search(client):
 def test_api_key_and_rate_limit(settings, services):
     from fastapi.testclient import TestClient
 
-    from shopper.api.app import create_app
-    from shopper.settings import Settings
+    from ai_shopping_bot.api.app import create_app
+    from ai_shopping_bot.settings import Settings
 
     s = Settings(
         _env_file=None, llm="fake", catalog="fake", api_key="secret", rate_limit_per_minute=2

@@ -2,8 +2,8 @@ import httpx
 import pytest
 import respx
 
-from shopper.providers.fake import FakeProvider
-from shopper.providers.unwrangle import DEFAULT_URL, UnWrangleProvider
+from ai_shopping_bot.providers.fake import FakeProvider
+from ai_shopping_bot.providers.unwrangle import DEFAULT_URL, UnWrangleProvider
 
 
 def test_fake_provider_is_deterministic():

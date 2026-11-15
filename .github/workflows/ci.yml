@@ -21,7 +21,7 @@ jobs:
       - run: ruff check .
       - run: ruff format --check .
       - run: lint-imports
-      - run: vulture shopper --min-confidence 80
+      - run: vulture ai_shopping_bot --min-confidence 80
       - run: bash scripts/check_root_clutter.sh
       - run: bash scripts/check_model_names.sh
-      - run: pytest --cov=shopper --cov-fail-under=80
+      - run: pytest --cov=ai_shopping_bot --cov-fail-under=80

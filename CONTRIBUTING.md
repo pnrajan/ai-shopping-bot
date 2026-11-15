@@ -5,8 +5,8 @@ Thanks for your interest. Issues and pull requests are welcome.
 ## Setup
 
 ```bash
-git clone https://github.com/<your-username>/personal-shopper.git
-cd personal-shopper
+git clone https://github.com/<your-username>/ai-shopping-bot.git
+cd ai-shopping-bot
 bash scripts/setup.sh --dev
 source .venv/bin/activate
 ```
@@ -25,10 +25,10 @@ These are enforced by CI, not just convention.
 | Rule | Enforced by |
 |---|---|
 | A request is a sequence of stages. One class per stage, one `run(ctx)` method, under 40 statements. | ruff `PLR0915`, `C901` |
-| Catch specific exceptions. The only broad handler lives at the HTTP boundary in `shopper/api/`. | ruff `BLE001` |
+| Catch specific exceptions. The only broad handler lives at the HTTP boundary in `ai_shopping_bot/api/`. | ruff `BLE001` |
 | Layers import downward only: `api` → `pipeline` → `stages` → `tools` → `search` → `session`/`cache` → `providers`/`llm` → `contracts`. | `import-linter` |
 | Every LLM call goes through `LLMClient` and spends from the per-request budget. | code review, `LLMBudget` |
-| Model names live in `shopper/settings.py` only. Code refers to roles. | `scripts/check_model_names.sh` |
+| Model names live in `ai_shopping_bot/settings.py` only. Code refers to roles. | `scripts/check_model_names.sh` |
 | Nothing touches network or disk at import time. Clients are built in the app lifespan and injected. | code review |
 | Delete superseded code in the same PR that replaces it. | `vulture` |
 | Repo root holds config and `main.py` only. Scripts go in `scripts/`. | `scripts/check_root_clutter.sh` |
