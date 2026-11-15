@@ -5,7 +5,7 @@ description = "FastAPI personal shopping assistant: query understanding, product
 readme = "README.md"
 license = { file = "LICENSE" }
 authors = [{ name = "Pankaj Rajan" }]
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.163.0,<1.0",
     "uvicorn[standard]>=0.54.0,<1.0",
@@ -32,7 +32,7 @@ otel = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "BLE", "G", "C90", "PLR0915", "SIM", "RET"]

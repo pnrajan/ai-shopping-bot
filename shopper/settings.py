@@ -6,13 +6,13 @@ Model ids use the form ``provider/model``. Supported providers: ``openai``, ``si
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
-class ModelRole(str, Enum):
+class ModelRole(StrEnum):
     UNDERSTANDING = "understanding"
     PLANNING = "planning"
     RESPONSE = "response"

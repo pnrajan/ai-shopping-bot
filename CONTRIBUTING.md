@@ -27,7 +27,7 @@ pip install -r requirements-dev.txt
 
 ## Style
 
-- Python 3.10+ compatible.
+- Python 3.11+ compatible.
 - Follow docs/ENGINEERING_PLAN.md: one stage per concern, no blind excepts, no model names outside settings.py, LLM calls only through LLMClient.
 - Type hints on public functions.
 - Docstrings on public classes and functions. Keep them proportional to the code.

@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class Role(str, Enum):
+class Role(StrEnum):
     USER = "user"
     ASSISTANT = "assistant"
 
@@ -24,7 +24,7 @@ class ChatRequest(BaseModel):
     conversation_id: str = Field(..., min_length=1, max_length=128)
 
 
-class DataType(str, Enum):
+class DataType(StrEnum):
     PRODUCTS = "products"
     GENERAL = "general"
     CLARIFICATION = "clarification"

@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml/badge.svg)](https://github.com/pnrajan/personal-shopper/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 
 A FastAPI shopping assistant. One `/chat` endpoint takes a user turn, understands it with a single LLM call, searches a product catalog, and replies with text plus structured product data. Follow-up turns that narrow the results ("which of these are under $300?") are filtered in memory without a new search. Comparisons ("X vs Y") fetch each product and return a table.
 
@@ -122,7 +122,7 @@ bash scripts/check_model_names.sh
 pytest --cov=shopper --cov-fail-under=80
 ```
 
-CI runs all of the above on Python 3.10, 3.12, and 3.13.
+CI runs all of the above on Python 3.11, 3.12, and 3.13.
 
 ### Layout
 
